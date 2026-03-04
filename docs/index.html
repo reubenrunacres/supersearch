@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperSearch</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>SuperSearch - 3D Superconductor Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -17,325 +18,473 @@
 
         body {
             font-family: 'Inter', -apple-system, sans-serif;
-            background: #F7F2ED;
-            color: #202020;
+            background: #0a0e1a;
+            color: #e8e8e8;
             line-height: 1.65;
             font-size: 16px;
-            padding: 60px 40px;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        #header {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            pointer-events: auto;
         }
 
         h1 {
             font-family: 'Fragment Mono', monospace;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 400;
-            color: #202020;
-            margin-bottom: 80px;
-            letter-spacing: 0;
-        }
-
-        h2 {
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 400;
-            color: #202020;
-            margin: 60px 0 20px 0;
-            line-height: 1.65;
-        }
-
-        p {
-            font-size: 1rem;
-            color: #202020;
-            margin-bottom: 20px;
-            max-width: 720px;
-        }
-
-        #chart {
-            margin: 60px 0;
-            background: none;
-        }
-
-        #chart svg {
-            background: #FFFFFF;
-            display: block;
-            margin: 0 auto;
-        }
-
-        .stats {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 0.875rem;
-            color: #20202080;
-            margin: 40px 0;
-            line-height: 1.8;
-        }
-
-        .legend {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 0.875rem;
-            color: #202020;
-            margin: 40px 0;
-            line-height: 1.8;
-        }
-
-        .legend-item {
-            display: inline-block;
-            margin-right: 30px;
+            color: #ffffff;
             margin-bottom: 10px;
+            letter-spacing: -0.02em;
         }
 
-        .legend-color {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            vertical-align: middle;
-            border: 1px solid #20202020;
+        .subtitle {
+            font-size: 0.875rem;
+            color: #888;
+            font-family: 'Fragment Mono', monospace;
         }
 
-        .tooltip {
+        #controls {
             position: absolute;
-            background: #FFFFFF;
-            border: 1px solid #202020;
-            padding: 10px 14px;
+            top: 40px;
+            right: 40px;
+            background: rgba(20, 24, 35, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            min-width: 200px;
+        }
+
+        #stats {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            background: rgba(20, 24, 35, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
+            line-height: 1.8;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(20, 24, 35, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+        }
+
+        .legend-title {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .legend-gradient {
+            width: 200px;
+            height: 20px;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-label {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        button {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+
+        button.active {
+            background: rgba(59, 130, 246, 0.4);
+            border-color: #3b82f6;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.15s;
-            font-family: 'Fragment Mono', monospace;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+
+        .stat-value {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .instructions {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.75rem;
+            color: #666;
             line-height: 1.6;
         }
 
-        .controls {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 0.875rem;
-            color: #20202080;
-            margin: 30px 0;
-            line-height: 1.8;
-        }
-
-        footer {
-            margin-top: 100px;
-            padding-top: 40px;
-            border-top: 1px solid #20202020;
-            font-family: 'Fragment Mono', monospace;
-            font-size: 0.8125rem;
-            color: #20202080;
-            line-height: 1.8;
-        }
-
-        footer a {
-            color: #202020;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
         @media (max-width: 768px) {
-            body {
-                padding: 40px 20px;
+            #header, #controls, #stats, #legend {
+                position: relative;
+                margin: 10px;
             }
             
-            h1 {
-                margin-bottom: 40px;
+            #ui-overlay {
+                position: relative;
+                display: flex;
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>SuperSearch</h1>
+    <div id="container">
+        <div id="canvas-container"></div>
+        
+        <div id="ui-overlay">
+            <div id="header">
+                <h1>SuperSearch</h1>
+                <div class="subtitle">21,263 superconductors in 3D composition space</div>
+            </div>
 
-        <p>SuperSearch maps 21,263 known superconducting materials in composition space to identify under-explored regions for discovery.</p>
+            <div id="controls">
+                <div class="control-group">
+                    <div class="control-label">View Mode</div>
+                    <button id="rotate-btn" class="active">Auto-Rotate</button>
+                </div>
+                <div class="control-group">
+                    <button id="reset-btn">Reset View</button>
+                </div>
+                <div class="instructions">
+                    Drag to rotate<br>
+                    Scroll to zoom<br>
+                    Right-drag to pan<br>
+                    Hover for details
+                </div>
+            </div>
 
-        <p>Using PCA dimensionality reduction and DBSCAN clustering, we identify 3 major composition families and 34 sparse regions adjacent to high-Tc materials—potential targets for autonomous laboratory screening.</p>
+            <div id="stats">
+                <div>Materials: <span class="stat-value">21,263</span></div>
+                <div>Families: <span class="stat-value">3</span></div>
+                <div>Sparse Regions: <span class="stat-value">34</span></div>
+                <div>Tc Range: <span class="stat-value">0-185K</span></div>
+                <div>Variance (3D): <span class="stat-value">82.4%</span></div>
+            </div>
 
-        <div class="controls">
-            Hover over points for material details<br>
-            Scroll to zoom, drag to pan<br>
-            Dashed boxes highlight under-explored regions
+            <div id="legend">
+                <div class="legend-title">Critical Temperature (Tc)</div>
+                <div class="legend-gradient"></div>
+                <div class="legend-labels">
+                    <span>0K</span>
+                    <span>93K</span>
+                    <span>185K</span>
+                </div>
+            </div>
         </div>
 
-        <div id="chart"></div>
-
-        <div class="legend">
-            <div class="legend-item">
-                <span class="legend-color" style="background: #3b82f6;"></span>
-                Low Tc (0-50K)
-            </div>
-            <div class="legend-item">
-                <span class="legend-color" style="background: #a855f7;"></span>
-                Medium Tc (50-100K)
-            </div>
-            <div class="legend-item">
-                <span class="legend-color" style="background: #ec4899;"></span>
-                High Tc (100K+)
-            </div>
-        </div>
-
-        <div class="stats">
-            Materials analyzed: 21,263<br>
-            Composition families: 3<br>
-            Under-explored regions: 34<br>
-            Tc range: 0-185K<br>
-            Variance retained (2D): 73.55%
-        </div>
-
-        <h2>The 34 highlighted regions show composition spaces with fewer known materials, adjacent to superconductors with high critical temperatures. These represent opportunities for systematic experimental screening.</h2>
-
-        <h2>Built for Periodic Labs to demonstrate superconductor composition space analysis and autonomous lab targeting strategy.</h2>
-
-        <footer>
-            PCA + DBSCAN clustering on UCI Superconductivity Database<br>
-            Visualization: D3.js<br>
-            <a href="https://github.com/reubenrunacres/supersearch" target="_blank">GitHub</a>
-        </footer>
+        <div id="tooltip"></div>
     </div>
 
-    <div class="tooltip" id="tooltip"></div>
-
     <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e1a);
+        scene.fog = new THREE.Fog(0x0a0e1a, 50, 200);
+
+        const container = document.getElementById('canvas-container');
+        const camera = new THREE.PerspectiveCamera(
+            60,
+            container.clientWidth / container.clientHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(50, 50, 50);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // Orbit controls with constraints
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 20;
+        controls.maxDistance = 150;
+        controls.maxPolarAngle = Math.PI;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x3b82f6, 1, 200);
+        pointLight1.position.set(50, 50, 50);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xec4899, 0.8, 200);
+        pointLight2.position.set(-50, -50, -50);
+        scene.add(pointLight2);
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(100, 20, 0x3b82f6, 0x1a1f2e);
+        gridHelper.position.y = -30;
+        scene.add(gridHelper);
+
+        // Axes helper
+        const axesHelper = new THREE.AxesHelper(40);
+        scene.add(axesHelper);
+
+        // Load and visualize data
+        let pointsMesh;
+        let sparseRegions = [];
+        let materials = [];
+        let autoRotate = true;
+
         fetch('data/analysis_results.json')
             .then(response => response.json())
-            .then(data => renderVisualization(data))
+            .then(data => {
+                materials = data.materials;
+                createVisualization(data);
+            })
             .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('chart').innerHTML = '<p style="text-align:center;color:#20202080;">Error loading data</p>';
+                console.error('Error loading data:', error);
             });
 
-        function renderVisualization(data) {
-            const containerWidth = Math.min(1200, window.innerWidth - 80);
-            const aspectRatio = 1.5;
-            const width = containerWidth;
-            const height = width / aspectRatio;
-            const margin = {top: 20, right: 20, bottom: 40, left: 50};
-            const plotWidth = width - margin.left - margin.right;
-            const plotHeight = height - margin.top - margin.bottom;
-
-            const svg = d3.select('#chart')
-                .append('svg')
-                .attr('width', width)
-                .attr('height', height);
-
-            const g = svg.append('g')
-                .attr('transform', `translate(${margin.left},${margin.top})`);
-
-            const xExtent = d3.extent(data.materials, d => d.x);
-            const yExtent = d3.extent(data.materials, d => d.y);
+        function createVisualization(data) {
+            // Color scale for Tc
+            const maxTc = Math.max(...data.materials.map(m => m.tc));
             
-            const xScale = d3.scaleLinear()
-                .domain([xExtent[0] * 1.1, xExtent[1] * 1.1])
-                .range([0, plotWidth]);
-
-            const yScale = d3.scaleLinear()
-                .domain([yExtent[0] * 1.1, yExtent[1] * 1.1])
-                .range([plotHeight, 0]);
-
-            const colorScale = d3.scaleSequential()
-                .domain([0, d3.max(data.materials, d => d.tc)])
-                .interpolator(d3.interpolateRgb('#3b82f6', '#ec4899'));
-
-            // Draw sparse regions (34 boxes)
-            if (data.sparse_regions) {
-                data.sparse_regions.forEach(region => {
-                    g.append('rect')
-                        .attr('x', xScale(region.x_min))
-                        .attr('y', yScale(region.y_max))
-                        .attr('width', xScale(region.x_max) - xScale(region.x_min))
-                        .attr('height', yScale(region.y_min) - yScale(region.y_max))
-                        .attr('fill', 'none')
-                        .attr('stroke', '#202020')
-                        .attr('stroke-width', 0.5)
-                        .attr('stroke-dasharray', '2,2')
-                        .attr('opacity', 0.4);
-                });
+            function getTcColor(tc) {
+                const t = tc / maxTc;
+                if (t < 0.5) {
+                    // Blue to Purple
+                    const r = Math.floor(59 + (139 - 59) * (t * 2));
+                    const g = Math.floor(130 + (92 - 130) * (t * 2));
+                    const b = Math.floor(246 + (246 - 246) * (t * 2));
+                    return new THREE.Color(`rgb(${r},${g},${b})`);
+                } else {
+                    // Purple to Pink
+                    const r = Math.floor(139 + (236 - 139) * ((t - 0.5) * 2));
+                    const g = Math.floor(92 + (72 - 92) * ((t - 0.5) * 2));
+                    const b = Math.floor(246 + (153 - 246) * ((t - 0.5) * 2));
+                    return new THREE.Color(`rgb(${r},${g},${b})`);
+                }
             }
 
-            // Draw all 21,263 material points
-            g.selectAll('circle')
-                .data(data.materials)
-                .enter()
-                .append('circle')
-                .attr('cx', d => xScale(d.x))
-                .attr('cy', d => yScale(d.y))
-                .attr('r', 1.5)
-                .attr('fill', d => colorScale(d.tc))
-                .attr('opacity', 0.5)
-                .on('mouseover', function(event, d) {
-                    const tooltip = d3.select('#tooltip');
-                    tooltip.style('opacity', 1)
-                        .html(`${d.material || 'Unknown'}<br>Tc: ${d.tc.toFixed(1)}K<br>Cluster: ${d.cluster}`)
-                        .style('left', (event.pageX + 10) + 'px')
-                        .style('top', (event.pageY - 10) + 'px');
-                })
-                .on('mouseout', () => {
-                    d3.select('#tooltip').style('opacity', 0);
+            // Normalize coordinates to fit in scene
+            const xExtent = [Math.min(...data.materials.map(m => m.x)), Math.max(...data.materials.map(m => m.x))];
+            const yExtent = [Math.min(...data.materials.map(m => m.y)), Math.max(...data.materials.map(m => m.y))];
+            
+            const scale = 60;
+            const xScale = (x) => ((x - xExtent[0]) / (xExtent[1] - xExtent[0]) - 0.5) * scale;
+            const yScale = (y) => ((y - yExtent[0]) / (yExtent[1] - yExtent[0]) - 0.5) * scale;
+            const zScale = (tc) => (tc / maxTc - 0.5) * 40;
+
+            // Create points geometry
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            data.materials.forEach(material => {
+                positions.push(
+                    xScale(material.x),
+                    zScale(material.tc),
+                    yScale(material.y)
+                );
+                
+                const color = getTcColor(material.tc);
+                colors.push(color.r, color.g, color.b);
+            });
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+
+            pointsMesh = new THREE.Points(geometry, material);
+            scene.add(pointsMesh);
+
+            // Create sparse region boxes
+            if (data.sparse_regions) {
+                data.sparse_regions.forEach(region => {
+                    const width = xScale(region.x_max) - xScale(region.x_min);
+                    const height = 5;
+                    const depth = yScale(region.y_max) - yScale(region.y_min);
+                    
+                    const boxGeometry = new THREE.BoxGeometry(width, height, depth);
+                    const boxMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x3b82f6,
+                        transparent: true,
+                        opacity: 0.1,
+                        wireframe: true
+                    });
+                    
+                    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                    box.position.set(
+                        (xScale(region.x_min) + xScale(region.x_max)) / 2,
+                        0,
+                        (yScale(region.y_min) + yScale(region.y_max)) / 2
+                    );
+                    
+                    scene.add(box);
+                    sparseRegions.push(box);
                 });
-
-            // Axes with grid lines
-            const xAxis = d3.axisBottom(xScale).ticks(6).tickSize(-plotHeight);
-            const yAxis = d3.axisLeft(yScale).ticks(6).tickSize(-plotWidth);
-
-            g.append('g')
-                .attr('transform', `translate(0,${plotHeight})`)
-                .call(xAxis)
-                .call(g => {
-                    g.selectAll('.tick line')
-                        .attr('stroke', '#20202010');
-                    g.selectAll('.tick text')
-                        .style('font-family', 'Fragment Mono, monospace')
-                        .style('font-size', '10px')
-                        .style('fill', '#20202080');
-                    g.select('.domain')
-                        .attr('stroke', '#202020');
-                })
-                .append('text')
-                .attr('x', plotWidth / 2)
-                .attr('y', 35)
-                .attr('fill', '#20202080')
-                .attr('text-anchor', 'middle')
-                .style('font-family', 'Fragment Mono, monospace')
-                .style('font-size', '10px')
-                .text('PC1');
-
-            g.append('g')
-                .call(yAxis)
-                .call(g => {
-                    g.selectAll('.tick line')
-                        .attr('stroke', '#20202010');
-                    g.selectAll('.tick text')
-                        .style('font-family', 'Fragment Mono, monospace')
-                        .style('font-size', '10px')
-                        .style('fill', '#20202080');
-                    g.select('.domain')
-                        .attr('stroke', '#202020');
-                })
-                .append('text')
-                .attr('transform', 'rotate(-90)')
-                .attr('y', -35)
-                .attr('x', -plotHeight / 2)
-                .attr('fill', '#20202080')
-                .attr('text-anchor', 'middle')
-                .style('font-family', 'Fragment Mono, monospace')
-                .style('font-size', '10px')
-                .text('PC2');
-
-            // Zoom and pan functionality
-            const zoom = d3.zoom()
-                .scaleExtent([0.5, 20])
-                .on('zoom', (event) => {
-                    g.selectAll('circle').attr('transform', event.transform);
-                    g.selectAll('rect').attr('transform', event.transform);
-                });
-
-            svg.call(zoom);
+            }
         }
+
+        // Raycasting for hover tooltips
+        const raycaster = new THREE.Raycaster();
+        raycaster.params.Points.threshold = 0.5;
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        renderer.domElement.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / container.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / container.clientHeight) * 2 + 1;
+        });
+
+        // Controls
+        document.getElementById('rotate-btn').addEventListener('click', function() {
+            autoRotate = !autoRotate;
+            controls.autoRotate = autoRotate;
+            this.classList.toggle('active');
+            this.textContent = autoRotate ? 'Auto-Rotate' : 'Manual Control';
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            camera.position.set(50, 50, 50);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        });
+
+        // Animation loop
+        let lastHoveredIndex = -1;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            controls.update();
+
+            // Raycasting for tooltips
+            if (pointsMesh) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(pointsMesh);
+                
+                if (intersects.length > 0) {
+                    const index = intersects[0].index;
+                    
+                    if (index !== lastHoveredIndex && materials[index]) {
+                        const material = materials[index];
+                        tooltip.innerHTML = `
+                            <strong>${material.material || 'Unknown'}</strong><br>
+                            Tc: ${material.tc.toFixed(1)}K<br>
+                            Cluster: ${material.cluster}
+                        `;
+                        tooltip.style.opacity = '1';
+                        tooltip.style.left = (mouse.x * container.clientWidth / 2 + container.clientWidth / 2 + 15) + 'px';
+                        tooltip.style.top = (-mouse.y * container.clientHeight / 2 + container.clientHeight / 2 + 15) + 'px';
+                        lastHoveredIndex = index;
+                    }
+                } else {
+                    tooltip.style.opacity = '0';
+                    lastHoveredIndex = -1;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
     </script>
 </body>
 </html>
-<!-- build trigger -->
