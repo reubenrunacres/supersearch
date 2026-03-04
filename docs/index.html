@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperSearch - 3D Superconductor Explorer</title>
+    <title>SuperSearch - Superconductor Composition Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -57,7 +60,7 @@
             font-size: 1.5rem;
             font-weight: 400;
             color: #ffffff;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: -0.02em;
         }
 
@@ -71,143 +74,263 @@
             position: absolute;
             top: 40px;
             right: 40px;
-            background: rgba(20, 24, 35, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 8px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: auto;
-            min-width: 200px;
+            min-width: 240px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         #stats {
             position: absolute;
             bottom: 40px;
             left: 40px;
-            background: rgba(20, 24, 35, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 8px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: auto;
             font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
-            line-height: 1.8;
+            line-height: 2;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         #legend {
             position: absolute;
             bottom: 40px;
             right: 40px;
-            background: rgba(20, 24, 35, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 8px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        .legend-title {
+        .section-title {
             font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
-            color: #888;
-            margin-bottom: 10px;
+            color: #666;
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
+            font-weight: 600;
         }
 
-        .legend-gradient {
-            width: 200px;
-            height: 20px;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .legend-item:hover {
+            transform: translateX(4px);
+        }
+
+        .legend-item.dimmed {
+            opacity: 0.3;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .legend-item:hover .legend-color {
+            transform: scale(1.2);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .legend-label {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            color: #e8e8e8;
+        }
+
+        .legend-count {
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: auto;
+            padding-left: 12px;
+        }
+
+        .tc-gradient {
+            width: 100%;
+            height: 24px;
             background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
-            border-radius: 4px;
-            margin-bottom: 8px;
+            border-radius: 6px;
+            margin: 12px 0 8px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .legend-labels {
+        .tc-labels {
             display: flex;
             justify-content: space-between;
             font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
             color: #888;
+            margin-bottom: 16px;
         }
 
         .control-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .control-label {
             font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
-            color: #888;
-            margin-bottom: 6px;
+            color: #666;
+            margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
+            font-weight: 600;
         }
 
         button {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.5);
-            color: #3b82f6;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            padding: 10px 18px;
+            border-radius: 8px;
             font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
             cursor: pointer;
             transition: all 0.2s;
             width: 100%;
+            font-weight: 500;
         }
 
         button:hover {
-            background: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.25);
             border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         button.active {
-            background: rgba(59, 130, 246, 0.4);
+            background: rgba(59, 130, 246, 0.3);
             border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .button-group button {
+            font-size: 0.75rem;
+            padding: 8px 12px;
         }
 
         #tooltip {
             position: absolute;
             background: rgba(10, 14, 26, 0.95);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px 16px;
-            border-radius: 6px;
+            padding: 16px 20px;
+            border-radius: 10px;
             font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
-            line-height: 1.6;
+            line-height: 1.8;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
             z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
-        .stat-value {
-            color: #3b82f6;
+        .tooltip-title {
+            font-size: 0.9375rem;
+            color: #ffffff;
+            margin-bottom: 6px;
             font-weight: 600;
         }
 
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .tooltip-label {
+            color: #888;
+        }
+
+        .tooltip-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
         .instructions {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 0.75rem;
             color: #666;
-            line-height: 1.6;
+            line-height: 1.8;
+        }
+
+        .instruction-row {
+            margin-bottom: 4px;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Fragment Mono', monospace;
+            color: #888;
+            font-size: 0.875rem;
         }
 
         @media (max-width: 768px) {
             #header, #controls, #stats, #legend {
                 position: relative;
                 margin: 10px;
-            }
-            
-            #ui-overlay {
-                position: relative;
-                display: flex;
-                flex-direction: column;
             }
         }
     </style>
@@ -219,42 +342,77 @@
         <div id="ui-overlay">
             <div id="header">
                 <h1>SuperSearch</h1>
-                <div class="subtitle">21,263 superconductors in 3D composition space</div>
+                <div class="subtitle">21,263 superconductors mapped in 3D composition space</div>
             </div>
 
             <div id="controls">
                 <div class="control-group">
-                    <div class="control-label">View Mode</div>
-                    <button id="rotate-btn" class="active">Auto-Rotate</button>
+                    <div class="control-label">Camera Presets</div>
+                    <div class="button-group">
+                        <button onclick="setView('overview')">Overview</button>
+                        <button onclick="setView('families')">Families</button>
+                        <button onclick="setView('sparse')">Sparse</button>
+                        <button onclick="setView('highTc')">High-Tc</button>
+                    </div>
                 </div>
+                
                 <div class="control-group">
-                    <button id="reset-btn">Reset View</button>
+                    <div class="control-label">View Mode</div>
+                    <button id="rotate-btn" class="active" onclick="toggleRotation()">Auto-Rotate</button>
                 </div>
+                
+                <div class="control-group">
+                    <button onclick="resetCamera()">Reset View</button>
+                </div>
+                
                 <div class="instructions">
-                    Drag to rotate<br>
-                    Scroll to zoom<br>
-                    Right-drag to pan<br>
-                    Hover for details
+                    <div class="instruction-row">🖱️ Drag to rotate</div>
+                    <div class="instruction-row">🔍 Scroll to zoom</div>
+                    <div class="instruction-row">⇧ Right-drag to pan</div>
+                    <div class="instruction-row">💡 Hover for details</div>
+                    <div class="instruction-row">👆 Click legend to filter</div>
                 </div>
             </div>
 
             <div id="stats">
-                <div>Materials: <span class="stat-value">21,263</span></div>
-                <div>Families: <span class="stat-value">3</span></div>
-                <div>Sparse Regions: <span class="stat-value">34</span></div>
-                <div>Tc Range: <span class="stat-value">0-185K</span></div>
-                <div>Variance (3D): <span class="stat-value">82.4%</span></div>
+                <div><span class="stat-label">Materials:</span> <span class="stat-value">21,263</span></div>
+                <div><span class="stat-label">Families:</span> <span class="stat-value">3</span></div>
+                <div><span class="stat-label">Sparse Regions:</span> <span class="stat-value">34</span></div>
+                <div><span class="stat-label">Tc Range:</span> <span class="stat-value">0-185K</span></div>
+                <div><span class="stat-label">Variance:</span> <span class="stat-value">73.5%</span></div>
             </div>
 
             <div id="legend">
-                <div class="legend-title">Critical Temperature (Tc)</div>
-                <div class="legend-gradient"></div>
-                <div class="legend-labels">
+                <div class="section-title">Composition Families</div>
+                <div class="legend-item" onclick="toggleCluster(0)">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <div class="legend-label">Family A</div>
+                    <div class="legend-count" id="count-0">0</div>
+                </div>
+                <div class="legend-item" onclick="toggleCluster(1)">
+                    <div class="legend-color" style="background: #8b5cf6;"></div>
+                    <div class="legend-label">Family B</div>
+                    <div class="legend-count" id="count-1">0</div>
+                </div>
+                <div class="legend-item" onclick="toggleCluster(2)">
+                    <div class="legend-color" style="background: #ec4899;"></div>
+                    <div class="legend-label">Family C</div>
+                    <div class="legend-count" id="count-2">0</div>
+                </div>
+                
+                <div class="section-title" style="margin-top: 24px;">Critical Temperature</div>
+                <div class="tc-gradient"></div>
+                <div class="tc-labels">
                     <span>0K</span>
                     <span>93K</span>
                     <span>185K</span>
                 </div>
             </div>
+        </div>
+
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading 21,263 materials...</div>
         </div>
 
         <div id="tooltip"></div>
@@ -264,185 +422,296 @@
         // Scene setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0e1a);
-        scene.fog = new THREE.Fog(0x0a0e1a, 50, 200);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.002);
 
         const container = document.getElementById('canvas-container');
         const camera = new THREE.PerspectiveCamera(
-            60,
+            50,
             container.clientWidth / container.clientHeight,
             0.1,
             1000
         );
-        camera.position.set(50, 50, 50);
+        camera.position.set(80, 60, 80);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Orbit controls with constraints
+        // Orbit controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 20;
-        controls.maxDistance = 150;
-        controls.maxPolarAngle = Math.PI;
+        controls.minDistance = 30;
+        controls.maxDistance = 200;
+        controls.maxPolarAngle = Math.PI * 0.95;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.5;
+        controls.autoRotateSpeed = 0.3;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
         scene.add(ambientLight);
 
-        const pointLight1 = new THREE.PointLight(0x3b82f6, 1, 200);
-        pointLight1.position.set(50, 50, 50);
+        const pointLight1 = new THREE.PointLight(0x3b82f6, 2, 300);
+        pointLight1.position.set(60, 60, 60);
         scene.add(pointLight1);
 
-        const pointLight2 = new THREE.PointLight(0xec4899, 0.8, 200);
-        pointLight2.position.set(-50, -50, -50);
+        const pointLight2 = new THREE.PointLight(0xec4899, 1.5, 300);
+        pointLight2.position.set(-60, -40, -60);
         scene.add(pointLight2);
 
-        // Grid helper
-        const gridHelper = new THREE.GridHelper(100, 20, 0x3b82f6, 0x1a1f2e);
-        gridHelper.position.y = -30;
+        const pointLight3 = new THREE.PointLight(0x8b5cf6, 1, 200);
+        pointLight3.position.set(0, 80, 0);
+        scene.add(pointLight3);
+
+        // Grid and axes
+        const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
+        gridHelper.position.y = -40;
         scene.add(gridHelper);
 
-        // Axes helper
-        const axesHelper = new THREE.AxesHelper(40);
+        const axesHelper = new THREE.AxesHelper(50);
         scene.add(axesHelper);
 
-        // Load and visualize data
+        // Data structures
         let pointsMesh;
-        let sparseRegions = [];
+        let sparseBoxes = [];
         let materials = [];
+        let clusterVisibility = [true, true, true];
         let autoRotate = true;
 
+        // Cluster colors
+        const clusterColors = [
+            new THREE.Color(0x3b82f6), // Blue
+            new THREE.Color(0x8b5cf6), // Purple
+            new THREE.Color(0xec4899)  // Pink
+        ];
+
+        // Load and visualize data
         fetch('data/analysis_results.json')
             .then(response => response.json())
             .then(data => {
                 materials = data.materials;
                 createVisualization(data);
+                document.getElementById('loading').style.display = 'none';
             })
             .catch(error => {
                 console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = '<div class="loading-text" style="color: #ef4444;">Error loading data</div>';
             });
 
         function createVisualization(data) {
-            // Color scale for Tc
-            const maxTc = Math.max(...data.materials.map(m => m.tc));
-            
-            function getTcColor(tc) {
-                const t = tc / maxTc;
-                if (t < 0.5) {
-                    // Blue to Purple
-                    const r = Math.floor(59 + (139 - 59) * (t * 2));
-                    const g = Math.floor(130 + (92 - 130) * (t * 2));
-                    const b = Math.floor(246 + (246 - 246) * (t * 2));
-                    return new THREE.Color(`rgb(${r},${g},${b})`);
-                } else {
-                    // Purple to Pink
-                    const r = Math.floor(139 + (236 - 139) * ((t - 0.5) * 2));
-                    const g = Math.floor(92 + (72 - 92) * ((t - 0.5) * 2));
-                    const b = Math.floor(246 + (153 - 246) * ((t - 0.5) * 2));
-                    return new THREE.Color(`rgb(${r},${g},${b})`);
-                }
-            }
-
-            // Normalize coordinates to fit in scene
+            // Calculate data extents
             const xExtent = [Math.min(...data.materials.map(m => m.x)), Math.max(...data.materials.map(m => m.x))];
             const yExtent = [Math.min(...data.materials.map(m => m.y)), Math.max(...data.materials.map(m => m.y))];
+            const tcExtent = [data.metadata.tc_range.min, data.metadata.tc_range.max];
             
-            const scale = 60;
-            const xScale = (x) => ((x - xExtent[0]) / (xExtent[1] - xExtent[0]) - 0.5) * scale;
-            const yScale = (y) => ((y - yExtent[0]) / (yExtent[1] - yExtent[0]) - 0.5) * scale;
-            const zScale = (tc) => (tc / maxTc - 0.5) * 40;
+            // Better scaling - spread across full 3D space
+            const scaleX = 60;
+            const scaleY = 60;
+            const scaleZ = 60;
+            
+            const xScale = (x) => ((x - xExtent[0]) / (xExtent[1] - xExtent[0]) - 0.5) * scaleX;
+            const yScale = (y) => ((y - yExtent[0]) / (yExtent[1] - yExtent[0]) - 0.5) * scaleY;
+            const zScale = (tc) => ((tc - tcExtent[0]) / (tcExtent[1] - tcExtent[0]) - 0.5) * scaleZ;
+
+            // Create sprite texture for points (better than plain dots)
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 32, 32);
+            const sprite = new THREE.CanvasTexture(canvas);
 
             // Create points geometry
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
+            const sizes = [];
+
+            // Count by cluster
+            const clusterCounts = [0, 0, 0];
 
             data.materials.forEach(material => {
-                positions.push(
-                    xScale(material.x),
-                    zScale(material.tc),
-                    yScale(material.y)
-                );
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
                 
-                const color = getTcColor(material.tc);
+                positions.push(x, y, z);
+                
+                // Use cluster color
+                const color = clusterColors[material.cluster];
                 colors.push(color.r, color.g, color.b);
+                
+                // Vary size by Tc (higher Tc = bigger)
+                const size = 0.5 + (material.tc / tcExtent[1]) * 1.5;
+                sizes.push(size);
+                
+                clusterCounts[material.cluster]++;
             });
+
+            // Update counts in legend
+            document.getElementById('count-0').textContent = clusterCounts[0].toLocaleString();
+            document.getElementById('count-1').textContent = clusterCounts[1].toLocaleString();
+            document.getElementById('count-2').textContent = clusterCounts[2].toLocaleString();
 
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
             const material = new THREE.PointsMaterial({
-                size: 0.5,
+                size: 1.2,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.8,
-                sizeAttenuation: true
+                opacity: 0.85,
+                sizeAttenuation: true,
+                map: sprite,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
             });
 
             pointsMesh = new THREE.Points(geometry, material);
             scene.add(pointsMesh);
 
-            // Create sparse region boxes
+            // Create sparse region boxes (make them VISIBLE and IMPRESSIVE)
             if (data.sparse_regions) {
-                data.sparse_regions.forEach(region => {
-                    const width = xScale(region.x_max) - xScale(region.x_min);
-                    const height = 5;
-                    const depth = yScale(region.y_max) - yScale(region.y_min);
+                const gridSize = 1.5; // Approximate grid cell size
+                
+                data.sparse_regions.forEach((region, index) => {
+                    const centerX = xScale(region.x);
+                    const centerZ = yScale(region.y);
                     
-                    const boxGeometry = new THREE.BoxGeometry(width, height, depth);
+                    // Create filled box with glow
+                    const boxGeometry = new THREE.BoxGeometry(gridSize * 2, scaleZ * 0.8, gridSize * 2);
+                    
+                    // Filled box
                     const boxMaterial = new THREE.MeshBasicMaterial({
                         color: 0x3b82f6,
                         transparent: true,
-                        opacity: 0.1,
-                        wireframe: true
+                        opacity: 0.08,
+                        side: THREE.DoubleSide
                     });
                     
                     const box = new THREE.Mesh(boxGeometry, boxMaterial);
-                    box.position.set(
-                        (xScale(region.x_min) + xScale(region.x_max)) / 2,
-                        0,
-                        (yScale(region.y_min) + yScale(region.y_max)) / 2
-                    );
-                    
+                    box.position.set(centerX, 0, centerZ);
                     scene.add(box);
-                    sparseRegions.push(box);
+                    sparseBoxes.push(box);
+                    
+                    // Wireframe outline
+                    const edges = new THREE.EdgesGeometry(boxGeometry);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: 0x60a5fa,
+                        transparent: true,
+                        opacity: 0.4,
+                        linewidth: 2
+                    });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    wireframe.position.copy(box.position);
+                    scene.add(wireframe);
+                    sparseBoxes.push(wireframe);
                 });
+            }
+        }
+
+        // Camera presets
+        function setView(preset) {
+            controls.autoRotate = false;
+            autoRotate = false;
+            document.getElementById('rotate-btn').classList.remove('active');
+            
+            const duration = 1000;
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            let endPos, endTarget;
+            
+            switch(preset) {
+                case 'overview':
+                    endPos = new THREE.Vector3(80, 60, 80);
+                    endTarget = new THREE.Vector3(0, 0, 0);
+                    break;
+                case 'families':
+                    endPos = new THREE.Vector3(0, 100, 0);
+                    endTarget = new THREE.Vector3(0, 0, 0);
+                    break;
+                case 'sparse':
+                    endPos = new THREE.Vector3(50, 30, 50);
+                    endTarget = new THREE.Vector3(0, -10, 0);
+                    break;
+                case 'highTc':
+                    endPos = new THREE.Vector3(40, 50, 40);
+                    endTarget = new THREE.Vector3(0, 20, 0);
+                    break;
+            }
+            
+            const startTime = Date.now();
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+                
+                camera.position.lerpVectors(startPos, endPos, eased);
+                controls.target.lerpVectors(startTarget, endTarget, eased);
+                controls.update();
+                
+                if (t < 1) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function resetCamera() {
+            setView('overview');
+        }
+
+        function toggleRotation() {
+            autoRotate = !autoRotate;
+            controls.autoRotate = autoRotate;
+            document.getElementById('rotate-btn').classList.toggle('active');
+        }
+
+        function toggleCluster(cluster) {
+            clusterVisibility[cluster] = !clusterVisibility[cluster];
+            
+            // Update legend item appearance
+            const items = document.querySelectorAll('.legend-item');
+            items[cluster].classList.toggle('dimmed');
+            
+            // Update point visibility
+            if (pointsMesh) {
+                const colors = pointsMesh.geometry.attributes.color.array;
+                const originalColors = materials.map(m => clusterColors[m.cluster]);
+                
+                materials.forEach((material, i) => {
+                    if (material.cluster === cluster) {
+                        const alpha = clusterVisibility[cluster] ? 1 : 0.05;
+                        const color = originalColors[i];
+                        colors[i * 3] = color.r * alpha;
+                        colors[i * 3 + 1] = color.g * alpha;
+                        colors[i * 3 + 2] = color.b * alpha;
+                    }
+                });
+                
+                pointsMesh.geometry.attributes.color.needsUpdate = true;
             }
         }
 
         // Raycasting for hover tooltips
         const raycaster = new THREE.Raycaster();
-        raycaster.params.Points.threshold = 0.5;
+        raycaster.params.Points.threshold = 1;
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
+        let lastHoveredIndex = -1;
 
         renderer.domElement.addEventListener('mousemove', (event) => {
-            mouse.x = (event.clientX / container.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / container.clientHeight) * 2 + 1;
-        });
-
-        // Controls
-        document.getElementById('rotate-btn').addEventListener('click', function() {
-            autoRotate = !autoRotate;
-            controls.autoRotate = autoRotate;
-            this.classList.toggle('active');
-            this.textContent = autoRotate ? 'Auto-Rotate' : 'Manual Control';
-        });
-
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            camera.position.set(50, 50, 50);
-            controls.target.set(0, 0, 0);
-            controls.update();
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         });
 
         // Animation loop
-        let lastHoveredIndex = -1;
-
         function animate() {
             requestAnimationFrame(animate);
             
@@ -458,14 +727,31 @@
                     
                     if (index !== lastHoveredIndex && materials[index]) {
                         const material = materials[index];
+                        const clusterNames = ['Family A', 'Family B', 'Family C'];
+                        
                         tooltip.innerHTML = `
-                            <strong>${material.material || 'Unknown'}</strong><br>
-                            Tc: ${material.tc.toFixed(1)}K<br>
-                            Cluster: ${material.cluster}
+                            <div class="tooltip-title">${material.material || 'Superconductor ' + index}</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Critical Temp:</span>
+                                <span class="tooltip-value">${material.tc.toFixed(1)}K</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Cluster:</span>
+                                <span class="tooltip-value">${clusterNames[material.cluster]}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Atomic Mass:</span>
+                                <span class="tooltip-value">${material.atomic_mass.toFixed(1)}</span>
+                            </div>
                         `;
+                        
+                        const rect = container.getBoundingClientRect();
+                        const x = (mouse.x + 1) * rect.width / 2 + 15;
+                        const y = (-mouse.y + 1) * rect.height / 2 + 15;
+                        
                         tooltip.style.opacity = '1';
-                        tooltip.style.left = (mouse.x * container.clientWidth / 2 + container.clientWidth / 2 + 15) + 'px';
-                        tooltip.style.top = (-mouse.y * container.clientHeight / 2 + container.clientHeight / 2 + 15) + 'px';
+                        tooltip.style.left = x + 'px';
+                        tooltip.style.top = y + 'px';
                         lastHoveredIndex = index;
                     }
                 } else {
@@ -473,6 +759,13 @@
                     lastHoveredIndex = -1;
                 }
             }
+
+            // Animate sparse boxes (subtle pulse)
+            sparseBoxes.forEach((box, i) => {
+                if (i % 2 === 0) { // Only filled boxes
+                    box.material.opacity = 0.08 + Math.sin(Date.now() * 0.001 + i) * 0.02;
+                }
+            });
 
             renderer.render(scene, camera);
         }
@@ -484,6 +777,18 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1': setView('overview'); break;
+                case '2': setView('families'); break;
+                case '3': setView('sparse'); break;
+                case '4': setView('highTc'); break;
+                case 'r': resetCamera(); break;
+                case ' ': toggleRotation(); break;
+            }
         });
     </script>
 </body>
