@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSearch - Superconductor Composition Explorer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0a0e1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #8b94b0;
+            font-weight: 400;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .viz-container {
+            background: #141824;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar {
+            background: #141824;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .stat {
+            margin-bottom: 20px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #8b94b0;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .legend {
+            margin-top: 30px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(20, 24, 36, 0.95);
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 250px;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .tooltip-label {
+            color: #8b94b0;
+            margin-right: 10px;
+        }
+
+        .tooltip-value {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        #chart svg {
+            background: #0a0e1a;
+            border-radius: 8px;
+        }
+
+        .axis-label {
+            font-size: 14px;
+            fill: #8b94b0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
+            color: #8b94b0;
+        }
+
+        .spinner {
+            border: 3px solid #141824;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .insight {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .insight h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .insight p {
+            color: #c2c9d6;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .how-to {
+            background: #141824;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .how-to h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .how-to ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .how-to li {
+            color: #c2c9d6;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .how-to li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px 0;
+            color: #8b94b0;
+            font-size: 0.9rem;
+            border-top: 1px solid #1e2538;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SuperSearch</h1>
+            <p class="subtitle">Superconductor Composition Explorer</p>
+        </header>
+
+        <div class="content">
+            <div class="viz-container">
+                <div id="chart"></div>
+            </div>
+            
+            <div class="sidebar">
+                <h3>Dataset</h3>
+                <div class="stat">
+                    <div class="stat-label">Materials Analyzed</div>
+                    <div class="stat-value" id="total-materials">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Composition Families</div>
+                    <div class="stat-value" id="n-clusters">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Tc Range</div>
+                    <div class="stat-value" id="tc-range">-</div>
+                </div>
+
+                <div class="legend">
+                    <h3>Legend</h3>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);"></div>
+                        <span>Critical Temperature (K)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(239, 68, 68, 0.3); border: 2px solid #ef4444;"></div>
+                        <span>Under-explored regions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="insight">
+            <h3>Key Insight</h3>
+            <p id="insight-text">Loading analysis...</p>
+        </div>
+
+        <div class="how-to">
+            <h3>How to Read This</h3>
+            <ul>
+                <li><strong>Each dot</strong> represents one known superconducting material</li>
+                <li><strong>X & Y axes</strong> represent composition space (PCA of elemental properties like atomic mass, radius, valence)</li>
+                <li><strong>Color gradient</strong> shows critical temperature: Blue (low Tc) → Purple → Pink (high Tc)</li>
+                <li><strong>Red-outlined regions</strong> are statistically under-explored areas adjacent to known superconductors</li>
+                <li><strong>Hover over dots</strong> to see material properties</li>
+                <li><strong>Clusters</strong> represent composition families with similar elemental characteristics</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Built to demonstrate understanding of Periodic Labs' superconductor research mission</p>
+            <p style="margin-top: 10px;">Data: UCI Superconductivity Database (21,263 materials) | Analysis: PCA + DBSCAN | Visualization: D3.js</p>
+        </footer>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Load and visualize data
+        fetch('data/analysis_results.json')
+            .then(response => response.json())
+            .then(data => {
+                renderVisualization(data);
+                updateStats(data.metadata);
+                updateInsight(data);
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                document.getElementById('chart').innerHTML = '<div class="loading">Error loading data</div>';
+            });
+
+        function renderVisualization(data) {
+            const margin = {top: 40, right: 40, bottom: 60, left: 60};
+            const width = 800 - margin.left - margin.right;
+            const height = 600 - margin.top - margin.bottom;
+
+            // Create SVG
+            const svg = d3.select('#chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Scales
+            const xExtent = d3.extent(data.materials, d => d.x);
+            const yExtent = d3.extent(data.materials, d => d.y);
+            
+            const xScale = d3.scaleLinear()
+                .domain([xExtent[0] * 1.1, xExtent[1] * 1.1])
+                .range([0, width]);
+
+            const yScale = d3.scaleLinear()
+                .domain([yExtent[0] * 1.1, yExtent[1] * 1.1])
+                .range([height, 0]);
+
+            // Color scale for Tc
+            const colorScale = d3.scaleSequential()
+                .domain([0, d3.max(data.materials, d => d.tc)])
+                .interpolator(d3.interpolateRgb('#3b82f6', '#ec4899'));
+
+            // Draw sparse regions first (background)
+            svg.selectAll('.sparse-region')
+                .data(data.sparse_regions)
+                .enter()
+                .append('circle')
+                .attr('class', 'sparse-region')
+                .attr('cx', d => xScale(d.x))
+                .attr('cy', d => yScale(d.y))
+                .attr('r', 30)
+                .attr('fill', 'rgba(239, 68, 68, 0.15)')
+                .attr('stroke', '#ef4444')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-dasharray', '4,4');
+
+            // Draw materials as dots
+            const tooltip = d3.select('#tooltip');
+
+            svg.selectAll('.material')
+                .data(data.materials)
+                .enter()
+                .append('circle')
+                .attr('class', 'material')
+                .attr('cx', d => xScale(d.x))
+                .attr('cy', d => yScale(d.y))
+                .attr('r', 3.5)
+                .attr('fill', d => colorScale(d.tc))
+                .attr('opacity', 0.7)
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 0.5)
+                .on('mouseover', function(event, d) {
+                    d3.select(this)
+                        .attr('r', 6)
+                        .attr('opacity', 1)
+                        .attr('stroke-width', 2);
+                    
+                    tooltip
+                        .style('opacity', 1)
+                        .html(`
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Tc:</span>
+                                <span class="tooltip-value">${d.tc.toFixed(1)}K</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Atomic Mass:</span>
+                                <span class="tooltip-value">${d.atomic_mass.toFixed(1)}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Atomic Radius:</span>
+                                <span class="tooltip-value">${d.atomic_radius.toFixed(2)}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Valence:</span>
+                                <span class="tooltip-value">${d.valence.toFixed(2)}</span>
+                            </div>
+                        `)
+                        .style('left', (event.pageX + 15) + 'px')
+                        .style('top', (event.pageY - 15) + 'px');
+                })
+                .on('mouseout', function() {
+                    d3.select(this)
+                        .attr('r', 3.5)
+                        .attr('opacity', 0.7)
+                        .attr('stroke-width', 0.5);
+                    tooltip.style('opacity', 0);
+                });
+
+            // Axes
+            const xAxis = d3.axisBottom(xScale).ticks(8);
+            const yAxis = d3.axisLeft(yScale).ticks(8);
+
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(xAxis)
+                .attr('color', '#8b94b0');
+
+            svg.append('g')
+                .call(yAxis)
+                .attr('color', '#8b94b0');
+
+            // Axis labels
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('x', width / 2)
+                .attr('y', height + 45)
+                .attr('text-anchor', 'middle')
+                .text('Composition Space (PC1)');
+
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -45)
+                .attr('text-anchor', 'middle')
+                .text('Composition Space (PC2)');
+
+            // Title
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', -15)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '18px')
+                .attr('font-weight', '600')
+                .attr('fill', '#ffffff')
+                .text('Superconductor Landscape');
+        }
+
+        function updateStats(metadata) {
+            document.getElementById('total-materials').textContent = 
+                metadata.total_materials.toLocaleString();
+            document.getElementById('n-clusters').textContent = 
+                metadata.n_clusters;
+            document.getElementById('tc-range').textContent = 
+                `${metadata.tc_range.min.toFixed(0)}-${metadata.tc_range.max.toFixed(0)}K`;
+        }
+
+        function updateInsight(data) {
+            const highTcThreshold = 50; // K
+            const highTcMaterials = data.materials.filter(m => m.tc > highTcThreshold).length;
+            const veryHighTcMaterials = data.materials.filter(m => m.tc > 100).length;
+            const sparseRegions = data.sparse_regions.length;
+            const avgTc = data.metadata.tc_range.mean.toFixed(1);
+            
+            const text = `Analysis of ${data.metadata.total_materials.toLocaleString()} known superconductors reveals ${sparseRegions} statistically under-explored regions in composition space. ` +
+                `These sparse regions are adjacent to existing superconductors but have minimal experimental coverage—representing potential opportunities for discovery. ` +
+                `Current dataset contains ${highTcMaterials} materials with Tc > ${highTcThreshold}K (including ${veryHighTcMaterials} above 100K), with an average Tc of ${avgTc}K. ` +
+                `The highlighted regions could be strategic targets for Periodic Labs' AI-driven experimental approach, potentially accelerating the discovery of novel high-temperature superconductors.`;
+            
+            document.getElementById('insight-text').textContent = text;
+        }
+    </script>
+</body>
+</html>
