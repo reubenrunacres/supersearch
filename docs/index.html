@@ -73,6 +73,29 @@
             line-height: 1.8;
         }
 
+        .legend {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.875rem;
+            color: #202020;
+            margin: 40px 0;
+            line-height: 1.8;
+        }
+
+        .legend-item {
+            display: inline-block;
+            margin-right: 30px;
+            margin-bottom: 10px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 1px solid #20202020;
+        }
+
         .tooltip {
             position: absolute;
             background: #FFFFFF;
@@ -84,6 +107,14 @@
             transition: opacity 0.15s;
             font-family: 'Fragment Mono', monospace;
             line-height: 1.6;
+        }
+
+        .controls {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.875rem;
+            color: #20202080;
+            margin: 30px 0;
+            line-height: 1.8;
         }
 
         footer {
@@ -124,7 +155,28 @@
 
         <p>Using PCA dimensionality reduction and DBSCAN clustering, we identify 3 major composition families and 34 sparse regions adjacent to high-Tc materials—potential targets for autonomous laboratory screening.</p>
 
+        <div class="controls">
+            Hover over points for material details<br>
+            Scroll to zoom, drag to pan<br>
+            Dashed boxes highlight under-explored regions
+        </div>
+
         <div id="chart"></div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-color" style="background: #3b82f6;"></span>
+                Low Tc (0-50K)
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #a855f7;"></span>
+                Medium Tc (50-100K)
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ec4899;"></span>
+                High Tc (100K+)
+            </div>
+        </div>
 
         <div class="stats">
             Materials analyzed: 21,263<br>
@@ -188,7 +240,7 @@
                 .domain([0, d3.max(data.materials, d => d.tc)])
                 .interpolator(d3.interpolateRgb('#3b82f6', '#ec4899'));
 
-            // Sparse regions
+            // Draw sparse regions (34 boxes)
             if (data.sparse_regions) {
                 data.sparse_regions.forEach(region => {
                     g.append('rect')
@@ -204,7 +256,7 @@
                 });
             }
 
-            // Points
+            // Draw all 21,263 material points
             g.selectAll('circle')
                 .data(data.materials)
                 .enter()
@@ -225,7 +277,7 @@
                     d3.select('#tooltip').style('opacity', 0);
                 });
 
-            // Axes
+            // Axes with grid lines
             const xAxis = d3.axisBottom(xScale).ticks(6).tickSize(-plotHeight);
             const yAxis = d3.axisLeft(yScale).ticks(6).tickSize(-plotWidth);
 
@@ -273,7 +325,7 @@
                 .style('font-size', '10px')
                 .text('PC2');
 
-            // Zoom
+            // Zoom and pan functionality
             const zoom = d3.zoom()
                 .scaleExtent([0.5, 20])
                 .on('zoom', (event) => {
