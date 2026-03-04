@@ -237,3 +237,15 @@ LinkedIn: [your linkedin]
 ---
 
 **Thank you for building something this ambitious.** The world needs more people willing to tackle hard, important problems with novel approaches. I'd love to help.
+
+---
+
+## Links
+
+**Live Demo:** https://reubenrunacres.github.io/supersearch/  
+**GitHub Repository:** https://github.com/reubenrunacres/supersearch  
+**Documentation:** [README.md](README.md)
+
+---
+
+*Last updated: March 4, 2026*
