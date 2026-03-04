@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperSearch - Superconductor Composition Explorer</title>
+    <title>SuperSearch</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,483 +16,272 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: #F7F2ED;
             color: #202020;
-            line-height: 1.6;
+            line-height: 1.65;
+            font-size: 16px;
+            padding: 60px 40px;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-            border-bottom: 1px solid #202020;
-            padding-bottom: 30px;
         }
 
         h1 {
             font-family: 'Fragment Mono', monospace;
-            font-size: 2.5rem;
+            font-size: 1.25rem;
             font-weight: 400;
             color: #202020;
-            margin-bottom: 10px;
-            letter-spacing: -0.02em;
+            margin-bottom: 80px;
+            letter-spacing: 0;
         }
 
-        .subtitle {
+        h2 {
+            font-family: 'Inter', sans-serif;
             font-size: 1rem;
-            color: #20202080;
             font-weight: 400;
-        }
-
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .viz-container {
-            background: #ffffff;
-            border: 1px solid #20202020;
-            border-radius: 2px;
-            padding: 30px;
-        }
-
-        .sidebar {
-            background: #ffffff;
-            border: 1px solid #20202020;
-            border-radius: 2px;
-            padding: 25px;
-        }
-
-        .sidebar h3 {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 0.9rem;
-            margin-bottom: 20px;
             color: #202020;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            margin: 60px 0 20px 0;
+            line-height: 1.65;
         }
 
-        .stat {
+        p {
+            font-size: 1rem;
+            color: #202020;
             margin-bottom: 20px;
-            border-bottom: 1px solid #20202010;
-            padding-bottom: 15px;
+            max-width: 720px;
         }
 
-        .stat:last-child {
-            border-bottom: none;
+        #chart {
+            margin: 60px 0;
+            background: none;
         }
 
-        .stat-label {
+        #chart svg {
+            background: #FFFFFF;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .stats {
             font-family: 'Fragment Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.875rem;
             color: #20202080;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #202020;
-        }
-
-        .legend {
-            margin-top: 30px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 0.85rem;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 2px;
-            margin-right: 10px;
-            border: 1px solid #20202020;
+            margin: 40px 0;
+            line-height: 1.8;
         }
 
         .tooltip {
             position: absolute;
-            background: #ffffff;
+            background: #FFFFFF;
             border: 1px solid #202020;
-            padding: 12px;
-            font-size: 0.85rem;
+            padding: 10px 14px;
+            font-size: 0.8125rem;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.2s;
-            max-width: 250px;
-            box-shadow: 4px 4px 0px #202020;
-        }
-
-        .tooltip-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-
-        .tooltip-label {
+            transition: opacity 0.15s;
             font-family: 'Fragment Mono', monospace;
-            font-size: 0.75rem;
-            color: #20202080;
-            margin-right: 10px;
-        }
-
-        .tooltip-value {
-            color: #202020;
-            font-weight: 600;
-        }
-
-        #chart svg {
-            background: #FAFAF8;
-            border-radius: 2px;
-        }
-
-        .axis-label {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 12px;
-            fill: #20202080;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 100px 20px;
-            color: #20202080;
-        }
-
-        .spinner {
-            border: 2px solid #20202020;
-            border-top: 2px solid #202020;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .insight {
-            background: #ffffff;
-            border: 1px solid #202020;
-            padding: 20px;
-            margin-top: 30px;
-        }
-
-        .insight h3 {
-            font-family: 'Fragment Mono', monospace;
-            color: #202020;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .insight p {
-            color: #202020;
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .how-to {
-            background: #ffffff;
-            border: 1px solid #20202020;
-            border-radius: 2px;
-            padding: 25px;
-            margin-top: 30px;
-        }
-
-        .how-to h3 {
-            font-family: 'Fragment Mono', monospace;
-            color: #202020;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .how-to ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .how-to li {
-            color: #202020;
-            font-size: 0.95rem;
-            margin-bottom: 12px;
-            padding-left: 25px;
-            position: relative;
-        }
-
-        .how-to li:before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: #202020;
+            line-height: 1.6;
         }
 
         footer {
-            text-align: center;
-            margin-top: 60px;
-            padding: 30px 0;
+            margin-top: 100px;
+            padding-top: 40px;
+            border-top: 1px solid #20202020;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
             color: #20202080;
-            font-size: 0.85rem;
-            border-top: 1px solid #202020;
+            line-height: 1.8;
         }
 
         footer a {
             color: #202020;
-            text-decoration: underline;
-        }
-
-        footer a:hover {
             text-decoration: none;
         }
 
-        @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
-            }
+        footer a:hover {
+            text-decoration: underline;
+        }
 
+        @media (max-width: 768px) {
+            body {
+                padding: 40px 20px;
+            }
+            
             h1 {
-                font-size: 2rem;
+                margin-bottom: 40px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>SuperSearch</h1>
-            <p class="subtitle">Superconductor Composition Explorer</p>
-        </header>
+        <h1>SuperSearch</h1>
 
-        <div class="content">
-            <div class="viz-container">
-                <div id="chart"></div>
-            </div>
+        <p>SuperSearch maps 21,263 known superconducting materials in composition space to identify under-explored regions for discovery.</p>
 
-            <div class="sidebar">
-                <h3>Dataset</h3>
-                <div class="stat">
-                    <div class="stat-label">Total Materials</div>
-                    <div class="stat-value" id="total-materials">21,263</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Composition Families</div>
-                    <div class="stat-value">3</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Under-explored Regions</div>
-                    <div class="stat-value">34</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Tc Range</div>
-                    <div class="stat-value" id="tc-range">0-185K</div>
-                </div>
+        <p>Using PCA dimensionality reduction and DBSCAN clustering, we identify 3 major composition families and 34 sparse regions adjacent to high-Tc materials—potential targets for autonomous laboratory screening.</p>
 
-                <div class="legend">
-                    <h3>Critical Temperature (Tc)</h3>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #3b82f6;"></div>
-                        <span>Low (0-50K)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #a855f7;"></div>
-                        <span>Medium (50-100K)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ec4899;"></div>
-                        <span>High (100K+)</span>
-                    </div>
-                </div>
-            </div>
+        <div id="chart"></div>
+
+        <div class="stats">
+            Materials analyzed: 21,263<br>
+            Composition families: 3<br>
+            Under-explored regions: 34<br>
+            Tc range: 0-185K<br>
+            Variance retained (2D): 73.55%
         </div>
 
-        <div class="insight">
-            <h3>Analysis Methodology</h3>
-            <p>PCA (Principal Component Analysis) reduces 81 compositional features to 2D space, retaining 73.55% variance. DBSCAN clustering identifies 3 major composition families. Grid-based density analysis highlights 34 sparse regions adjacent to high-Tc materials—potential targets for autonomous laboratory screening.</p>
-        </div>
+        <h2>The 34 highlighted regions show composition spaces with fewer known materials, adjacent to superconductors with high critical temperatures. These represent opportunities for systematic experimental screening.</h2>
 
-        <div class="how-to">
-            <h3>Interaction Guide</h3>
-            <ul>
-                <li>Hover over points to see material details</li>
-                <li>Scroll to zoom in/out</li>
-                <li>Drag to pan around the composition space</li>
-                <li>34 highlighted regions show under-explored areas</li>
-            </ul>
-        </div>
+        <h2>Built for Periodic Labs to demonstrate superconductor composition space analysis and autonomous lab targeting strategy.</h2>
 
         <footer>
-            <p><strong>Built for Periodic Labs</strong> — Demonstrating superconductor composition space analysis</p>
-            <p style="margin-top: 10px;">Data: UCI Superconductivity Database (21,263 materials) | Analysis: PCA + DBSCAN | Visualization: D3.js</p>
+            PCA + DBSCAN clustering on UCI Superconductivity Database<br>
+            Visualization: D3.js<br>
+            <a href="https://github.com/reubenrunacres/supersearch" target="_blank">GitHub</a>
         </footer>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // Load and visualize data
         fetch('data/analysis_results.json')
             .then(response => response.json())
-            .then(data => {
-                renderVisualization(data);
-                updateStats(data.metadata);
-            })
+            .then(data => renderVisualization(data))
             .catch(error => {
-                console.error('Error loading data:', error);
-                document.getElementById('chart').innerHTML = '<div class="loading">Error loading data. Please refresh the page.</div>';
+                console.error('Error:', error);
+                document.getElementById('chart').innerHTML = '<p style="text-align:center;color:#20202080;">Error loading data</p>';
             });
 
         function renderVisualization(data) {
-            const margin = {top: 40, right: 40, bottom: 60, left: 60};
-            const width = 800 - margin.left - margin.right;
-            const height = 600 - margin.top - margin.bottom;
+            const containerWidth = Math.min(1200, window.innerWidth - 80);
+            const aspectRatio = 1.5;
+            const width = containerWidth;
+            const height = width / aspectRatio;
+            const margin = {top: 20, right: 20, bottom: 40, left: 50};
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
 
-            // Create SVG
             const svg = d3.select('#chart')
                 .append('svg')
-                .attr('width', width + margin.left + margin.right)
-                .attr('height', height + margin.top + margin.bottom)
-                .append('g')
+                .attr('width', width)
+                .attr('height', height);
+
+            const g = svg.append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
-            // Scales
             const xExtent = d3.extent(data.materials, d => d.x);
             const yExtent = d3.extent(data.materials, d => d.y);
             
             const xScale = d3.scaleLinear()
                 .domain([xExtent[0] * 1.1, xExtent[1] * 1.1])
-                .range([0, width]);
+                .range([0, plotWidth]);
 
             const yScale = d3.scaleLinear()
                 .domain([yExtent[0] * 1.1, yExtent[1] * 1.1])
-                .range([height, 0]);
+                .range([plotHeight, 0]);
 
-            // Color scale for Tc (blue → purple → pink)
             const colorScale = d3.scaleSequential()
                 .domain([0, d3.max(data.materials, d => d.tc)])
                 .interpolator(d3.interpolateRgb('#3b82f6', '#ec4899'));
 
-            // Draw sparse regions
+            // Sparse regions
             if (data.sparse_regions) {
                 data.sparse_regions.forEach(region => {
-                    svg.append('rect')
+                    g.append('rect')
                         .attr('x', xScale(region.x_min))
                         .attr('y', yScale(region.y_max))
                         .attr('width', xScale(region.x_max) - xScale(region.x_min))
                         .attr('height', yScale(region.y_min) - yScale(region.y_max))
                         .attr('fill', 'none')
                         .attr('stroke', '#202020')
-                        .attr('stroke-width', 1)
-                        .attr('stroke-dasharray', '3,3')
-                        .attr('opacity', 0.3);
+                        .attr('stroke-width', 0.5)
+                        .attr('stroke-dasharray', '2,2')
+                        .attr('opacity', 0.4);
                 });
             }
 
-            // Draw points
-            svg.selectAll('circle')
+            // Points
+            g.selectAll('circle')
                 .data(data.materials)
                 .enter()
                 .append('circle')
                 .attr('cx', d => xScale(d.x))
                 .attr('cy', d => yScale(d.y))
-                .attr('r', 2)
+                .attr('r', 1.5)
                 .attr('fill', d => colorScale(d.tc))
-                .attr('opacity', 0.6)
+                .attr('opacity', 0.5)
                 .on('mouseover', function(event, d) {
                     const tooltip = d3.select('#tooltip');
                     tooltip.style('opacity', 1)
-                        .html(`
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Formula:</span>
-                                <span class="tooltip-value">${d.material || 'Unknown'}</span>
-                            </div>
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Tc:</span>
-                                <span class="tooltip-value">${d.tc.toFixed(1)}K</span>
-                            </div>
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Cluster:</span>
-                                <span class="tooltip-value">${d.cluster}</span>
-                            </div>
-                        `)
+                        .html(`${d.material || 'Unknown'}<br>Tc: ${d.tc.toFixed(1)}K<br>Cluster: ${d.cluster}`)
                         .style('left', (event.pageX + 10) + 'px')
                         .style('top', (event.pageY - 10) + 'px');
                 })
-                .on('mouseout', function() {
+                .on('mouseout', () => {
                     d3.select('#tooltip').style('opacity', 0);
                 });
 
             // Axes
-            const xAxis = d3.axisBottom(xScale).ticks(8);
-            const yAxis = d3.axisLeft(yScale).ticks(8);
+            const xAxis = d3.axisBottom(xScale).ticks(6).tickSize(-plotHeight);
+            const yAxis = d3.axisLeft(yScale).ticks(6).tickSize(-plotWidth);
 
-            svg.append('g')
-                .attr('transform', `translate(0,${height})`)
+            g.append('g')
+                .attr('transform', `translate(0,${plotHeight})`)
                 .call(xAxis)
-                .selectAll('text')
+                .call(g => {
+                    g.selectAll('.tick line')
+                        .attr('stroke', '#20202010');
+                    g.selectAll('.tick text')
+                        .style('font-family', 'Fragment Mono, monospace')
+                        .style('font-size', '10px')
+                        .style('fill', '#20202080');
+                    g.select('.domain')
+                        .attr('stroke', '#202020');
+                })
+                .append('text')
+                .attr('x', plotWidth / 2)
+                .attr('y', 35)
+                .attr('fill', '#20202080')
+                .attr('text-anchor', 'middle')
                 .style('font-family', 'Fragment Mono, monospace')
-                .style('font-size', '11px')
-                .style('fill', '#202020');
+                .style('font-size', '10px')
+                .text('PC1');
 
-            svg.append('g')
+            g.append('g')
                 .call(yAxis)
-                .selectAll('text')
-                .style('font-family', 'Fragment Mono, monospace')
-                .style('font-size', '11px')
-                .style('fill', '#202020');
-
-            // Axis labels
-            svg.append('text')
-                .attr('class', 'axis-label')
-                .attr('text-anchor', 'middle')
-                .attr('x', width / 2)
-                .attr('y', height + 45)
-                .text('Principal Component 1');
-
-            svg.append('text')
-                .attr('class', 'axis-label')
-                .attr('text-anchor', 'middle')
+                .call(g => {
+                    g.selectAll('.tick line')
+                        .attr('stroke', '#20202010');
+                    g.selectAll('.tick text')
+                        .style('font-family', 'Fragment Mono, monospace')
+                        .style('font-size', '10px')
+                        .style('fill', '#20202080');
+                    g.select('.domain')
+                        .attr('stroke', '#202020');
+                })
+                .append('text')
                 .attr('transform', 'rotate(-90)')
-                .attr('y', -45)
-                .attr('x', -height / 2)
-                .text('Principal Component 2');
+                .attr('y', -35)
+                .attr('x', -plotHeight / 2)
+                .attr('fill', '#20202080')
+                .attr('text-anchor', 'middle')
+                .style('font-family', 'Fragment Mono, monospace')
+                .style('font-size', '10px')
+                .text('PC2');
 
             // Zoom
             const zoom = d3.zoom()
                 .scaleExtent([0.5, 20])
                 .on('zoom', (event) => {
-                    svg.selectAll('circle')
-                        .attr('transform', event.transform);
-                    svg.selectAll('rect')
-                        .attr('transform', event.transform);
+                    g.selectAll('circle').attr('transform', event.transform);
+                    g.selectAll('rect').attr('transform', event.transform);
                 });
 
-            d3.select('#chart svg').call(zoom);
-        }
-
-        function updateStats(metadata) {
-            if (metadata) {
-                document.getElementById('total-materials').textContent = metadata.n_materials.toLocaleString();
-                document.getElementById('tc-range').textContent = `${metadata.tc_min.toFixed(0)}-${metadata.tc_max.toFixed(0)}K`;
-            }
+            svg.call(zoom);
         }
     </script>
 </body>
