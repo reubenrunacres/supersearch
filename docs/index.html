@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperSearch - Superconductor Composition Explorer</title>
-    <script src="lib/three.min.js"></script>
-    <script src="lib/OrbitControls.js"></script>
-    <script src="lib/EffectComposer.js"></script>
-    <script src="lib/RenderPass.js"></script>
-    <script src="lib/UnrealBloomPass.js"></script>
-    <script src="lib/ConvexGeometry.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/ConvexGeometry.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -18,7 +21,7 @@
         }
 
         body {
-            font-family: -apple-system, -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: #0a0e1a;
             color: #e8e8e8;
             line-height: 1.65;
@@ -54,7 +57,7 @@
         }
 
         h1 {
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 1.5rem;
             font-weight: 400;
             color: #ffffff;
@@ -65,7 +68,7 @@
         .subtitle {
             font-size: 0.875rem;
             color: #888;
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
         }
 
         #controls {
@@ -92,7 +95,7 @@
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: auto;
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
             line-height: 2;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -112,7 +115,7 @@
         }
 
         .section-title {
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
             color: #666;
             margin-bottom: 12px;
@@ -152,7 +155,7 @@
         }
 
         .legend-label {
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
             color: #e8e8e8;
         }
@@ -176,7 +179,7 @@
         .tc-labels {
             display: flex;
             justify-content: space-between;
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
             color: #888;
             margin-bottom: 16px;
@@ -187,7 +190,7 @@
         }
 
         .control-label {
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.75rem;
             color: #666;
             margin-bottom: 8px;
@@ -202,7 +205,7 @@
             color: #60a5fa;
             padding: 10px 18px;
             border-radius: 8px;
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -242,7 +245,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 16px 20px;
             border-radius: 10px;
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             font-size: 0.8125rem;
             line-height: 1.8;
             pointer-events: none;
@@ -320,7 +323,7 @@
         }
 
         .loading-text {
-            font-family: 'SF Mono', monospace;
+            font-family: 'Fragment Mono', monospace;
             color: #888;
             font-size: 0.875rem;
         }
@@ -511,7 +514,7 @@
         <!-- Guided Tour Overlay -->
         <div id="tour-overlay" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 14, 26, 0.98); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 40px; border-radius: 16px; max-width: 600px; z-index: 2000; text-align: center; box-shadow: 0 16px 64px rgba(0, 0, 0, 0.8);">
             <div id="tour-content">
-                <h2 style="font-family: 'SF Mono', monospace; font-size: 1.5rem; margin-bottom: 16px; color: #fff;">Welcome to SuperSearch</h2>
+                <h2 style="font-family: 'Fragment Mono', monospace; font-size: 1.5rem; margin-bottom: 16px; color: #fff;">Welcome to SuperSearch</h2>
                 <p style="margin-bottom: 24px; line-height: 1.8; color: #ccc;"></p>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
@@ -524,7 +527,7 @@
         <!-- Insights Panel -->
         <div id="insights" style="position: absolute; top: 120px; left: 40px; background: rgba(20, 24, 35, 0.85); backdrop-filter: blur(20px); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: auto; max-width: 320px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
             <div class="section-title" style="margin-bottom: 16px;">Key Discoveries</div>
-            <div id="insights-content" style="font-family: 'SF Mono', monospace; font-size: 0.8125rem; line-height: 1.8;"></div>
+            <div id="insights-content" style="font-family: 'Fragment Mono', monospace; font-size: 0.8125rem; line-height: 1.8;"></div>
         </div>
     </div>
 
@@ -1209,4 +1212,3 @@
     </script>
 </body>
 </html>
-<!-- Deploy Thu Mar  5 11:10:45 CST 2026 -->
