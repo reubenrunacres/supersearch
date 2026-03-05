@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug</title>
+    <script src="lib/three.min.js"></script>
+</head>
+<body style="margin:0; background:#000;">
+    <div id="status" style="color:#fff; padding:20px; font-family:monospace; white-space:pre;"></div>
+    <div id="canvas"></div>
+    <script>
+        const log = (msg) => {
+            document.getElementById('status').textContent += msg + '\n';
+            console.log(msg);
+        };
+        
+        log('1. Starting...');
+        log('2. THREE defined: ' + (typeof THREE !== 'undefined'));
+        
+        if (typeof THREE === 'undefined') {
+            log('ERROR: THREE.js not loaded');
+        } else {
+            try {
+                log('3. Creating scene...');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 5;
+                
+                log('4. Creating renderer...');
+                const renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.getElementById('canvas').appendChild(renderer.domElement);
+                
+                log('5. Creating cube...');
+                const geometry = new THREE.BoxGeometry();
+                const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const cube = new THREE.Mesh(geometry, material);
+                scene.add(cube);
+                
+                log('6. Starting animation...');
+                function animate() {
+                    requestAnimationFrame(animate);
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                }
+                animate();
+                
+                log('✓ SUCCESS: Cube rendering');
+            } catch (e) {
+                log('ERROR: ' + e.message);
+                log('Stack: ' + e.stack);
+            }
+        }
+    </script>
+</body>
+</html>
