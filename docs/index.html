@@ -431,6 +431,25 @@
                 padding: 10px 14px;
                 font-size: 0.8125rem;
             }
+
+            /* About overlay mobile optimization */
+            #about-overlay > div {
+                margin: 20px auto;
+                padding: 24px;
+            }
+
+            #about-overlay h1 {
+                font-size: 1.5rem;
+            }
+
+            #about-overlay h3 {
+                font-size: 1rem;
+            }
+
+            #about-overlay .active {
+                padding: 12px 32px;
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
@@ -515,6 +534,68 @@
         </div>
 
         <div id="tooltip"></div>
+
+        <!-- About/Intro Overlay -->
+        <div id="about-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 14, 26, 0.95); backdrop-filter: blur(20px); z-index: 3000; overflow-y: auto; padding: 20px;">
+            <div style="max-width: 800px; margin: 40px auto; background: rgba(20, 24, 35, 0.9); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; padding: 48px; position: relative;">
+                <button onclick="closeAbout()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; padding: 8px 12px;">&times;</button>
+                
+                <h1 style="font-family: 'Fragment Mono', monospace; font-size: 2rem; margin-bottom: 12px; color: #fff; letter-spacing: -0.02em;">SuperSearch</h1>
+                <div style="font-size: 1rem; color: #60a5fa; margin-bottom: 32px; font-family: 'Fragment Mono', monospace;">Built for Periodic Labs Autonomous Discovery</div>
+                
+                <div style="margin-bottom: 32px; line-height: 1.8; color: #ccc;">
+                    <p style="margin-bottom: 16px;">This 3D visualization maps <strong>21,263 superconducting materials</strong> to reveal unexplored composition spaces with high discovery potential — directly supporting Periodic Labs' mission to accelerate materials discovery through autonomous experimentation.</p>
+                </div>
+
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-family: 'Fragment Mono', monospace; font-size: 1.125rem; color: #fff; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Strategic Value for Periodic Labs</h3>
+                    <div style="display: grid; gap: 16px;">
+                        <div style="padding: 16px; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #60a5fa; margin-bottom: 4px; font-family: 'Fragment Mono', monospace; font-size: 0.875rem;">Complements GNoME Predictions</div>
+                            <div style="font-size: 0.875rem; color: #aaa; line-height: 1.6;">Identifies experimental gaps in composition space that GNoME predictions haven't yet covered, guiding where to synthesize next.</div>
+                        </div>
+                        <div style="padding: 16px; background: rgba(139, 92, 246, 0.1); border-left: 3px solid #8b5cf6; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #a78bfa; margin-bottom: 4px; font-family: 'Fragment Mono', monospace; font-size: 0.875rem;">Autonomous Lab Prioritization</div>
+                            <div style="font-size: 0.875rem; color: #aaa; line-height: 1.6;">10 high-opportunity regions (red/yellow boxes) ranked by proximity to high-Tc materials and exploration density — ready for synthesis queue.</div>
+                        </div>
+                        <div style="padding: 16px; background: rgba(236, 72, 153, 0.1); border-left: 3px solid #ec4899; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #f472b6; margin-bottom: 4px; font-family: 'Fragment Mono', monospace; font-size: 0.875rem;">Hypothesis Generation</div>
+                            <div style="font-size: 0.875rem; color: #aaa; line-height: 1.6;">Visualizes composition families (convex hulls) to reveal promising interpolation targets between known high-Tc materials.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-family: 'Fragment Mono', monospace; font-size: 1.125rem; color: #fff; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Methodology</h3>
+                    <div style="font-size: 0.875rem; color: #aaa; line-height: 1.8;">
+                        <p style="margin-bottom: 12px;"><strong style="color: #ccc;">Data Source:</strong> 21,263 superconductors from UCI SuperConductor dataset</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #ccc;">Dimensionality Reduction:</strong> PCA projection from 81 atomic features to 2D composition space (X/Y axes)</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #ccc;">Clustering:</strong> K-means (k=3) to identify composition families</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #ccc;">Critical Temperature:</strong> Z-axis represents Tc (0-185K), color gradient from blue (low) to pink (high)</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #ccc;">Sparse Region Detection:</strong> Grid-based density analysis to find under-explored composition spaces</p>
+                        <p><strong style="color: #ccc;">Opportunity Ranking:</strong> Composite score based on proximity to high-Tc materials (Tc > 100K) and exploration density</p>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 32px;">
+                    <h3 style="font-family: 'Fragment Mono', monospace; font-size: 1.125rem; color: #fff; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Integration Roadmap</h3>
+                    <div style="font-size: 0.875rem; color: #aaa; line-height: 1.8;">
+                        <p style="margin-bottom: 12px;"><strong style="color: #60a5fa;">Phase 1 (Current):</strong> Standalone visualization + documentation</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #8b5cf6;">Phase 2 (1-2 days):</strong> Overlay Materials Project data to show property predictions</p>
+                        <p style="margin-bottom: 12px;"><strong style="color: #ec4899;">Phase 3 (1 week):</strong> Live experiment tracking — mark tested materials, update success rates</p>
+                        <p><strong style="color: #10b981;">Phase 4 (2-3 weeks):</strong> Predictive prioritization using autonomous lab feedback loop</p>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 40px;">
+                    <button onclick="closeAbout()" class="active" style="padding: 16px 48px; font-size: 1rem; background: #3b82f6; border: 1px solid #60a5fa; color: #fff;">Start Exploring</button>
+                </div>
+
+                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; font-size: 0.75rem; color: #666;">
+                    Built in 8 hours | <a href="https://github.com/reubenrunacres/supersearch" target="_blank" style="color: #60a5fa; text-decoration: none;">View on GitHub</a>
+                </div>
+            </div>
+        </div>
 
         <!-- Guided Tour Overlay -->
         <div id="tour-overlay" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 14, 26, 0.98); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 40px; border-radius: 16px; max-width: 600px; z-index: 2000; text-align: center; box-shadow: 0 16px 64px rgba(0, 0, 0, 0.8);">
@@ -1175,6 +1256,27 @@
             }
         });
 
+        // About Overlay System
+        function showAbout() {
+            document.getElementById('about-overlay').style.display = 'block';
+        }
+
+        function closeAbout() {
+            document.getElementById('about-overlay').style.display = 'none';
+            localStorage.setItem('supersearch_intro_seen', 'true');
+        }
+
+        // Show intro on first visit (unless mobile - keep it simple)
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (!isMobileDevice && !localStorage.getItem('supersearch_intro_seen')) {
+            // Show after data loads
+            setTimeout(() => {
+                if (materials.length > 0) {
+                    showAbout();
+                }
+            }, 1000);
+        }
+
         // Guided Tour System
         let tourStep = 0;
         const tourSteps = [
@@ -1306,13 +1408,20 @@
             panel.style.display = 'block';
         }
 
-        // Add tour button to controls (desktop only - simplify mobile UI)
+        // Add about/tour/insights buttons to controls (desktop only - simplify mobile UI)
         if (!isMobile) {
             const controlsDiv = document.getElementById('controls');
+            
+            const aboutButton = document.createElement('button');
+            aboutButton.textContent = 'About';
+            aboutButton.onclick = showAbout;
+            aboutButton.style.marginTop = '16px';
+            controlsDiv.appendChild(aboutButton);
+            
             const tourButton = document.createElement('button');
             tourButton.textContent = 'Start Tour';
             tourButton.onclick = startTour;
-            tourButton.style.marginTop = '16px';
+            tourButton.style.marginTop = '8px';
             controlsDiv.appendChild(tourButton);
 
             const insightsButton = document.createElement('button');
