@@ -655,13 +655,15 @@
             scene.add(spotLight.target);
         }
 
-        // Grid and axes
-        const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
-        gridHelper.position.y = -40;
-        scene.add(gridHelper);
+        // Grid and axes (desktop only - reduce draw calls on mobile)
+        if (!isMobile) {
+            const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
+            gridHelper.position.y = -40;
+            scene.add(gridHelper);
 
-        const axesHelper = new THREE.AxesHelper(50);
-        scene.add(axesHelper);
+            const axesHelper = new THREE.AxesHelper(50);
+            scene.add(axesHelper);
+        }
 
         // Data structures
         let pointsMesh;
@@ -772,8 +774,10 @@
                 const color = clusterColors[material.cluster];
                 colors.push(color.r, color.g, color.b);
                 
-                // Vary size by Tc (higher Tc = bigger)
-                const size = 0.5 + (material.tc / tcExtent[1]) * 1.5;
+                // Vary size by Tc (higher Tc = bigger, smaller on mobile)
+                const baseSize = isMobile ? 0.3 : 0.5;
+                const sizeRange = isMobile ? 1.0 : 1.5;
+                const size = baseSize + (material.tc / tcExtent[1]) * sizeRange;
                 sizes.push(size);
                 
                 clusterCounts[material.cluster]++;
