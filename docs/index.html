@@ -590,6 +590,63 @@
             pointsMesh = new THREE.Points(geometry, material);
             scene.add(pointsMesh);
 
+            // Create composition family bounding volumes
+            const clusterBounds = [{}, {}, {}];
+            data.materials.forEach(material => {
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
+                const cluster = material.cluster;
+                
+                if (!clusterBounds[cluster].minX) {
+                    clusterBounds[cluster] = {minX: x, maxX: x, minY: y, maxY: y, minZ: z, maxZ: z};
+                } else {
+                    clusterBounds[cluster].minX = Math.min(clusterBounds[cluster].minX, x);
+                    clusterBounds[cluster].maxX = Math.max(clusterBounds[cluster].maxX, x);
+                    clusterBounds[cluster].minY = Math.min(clusterBounds[cluster].minY, y);
+                    clusterBounds[cluster].maxY = Math.max(clusterBounds[cluster].maxY, y);
+                    clusterBounds[cluster].minZ = Math.min(clusterBounds[cluster].minZ, z);
+                    clusterBounds[cluster].maxZ = Math.max(clusterBounds[cluster].maxZ, z);
+                }
+            });
+
+            // Create bounding box meshes for each family
+            clusterBounds.forEach((bounds, i) => {
+                const width = bounds.maxX - bounds.minX;
+                const height = bounds.maxY - bounds.minY;
+                const depth = bounds.maxZ - bounds.minZ;
+                const centerX = (bounds.minX + bounds.maxX) / 2;
+                const centerY = (bounds.minY + bounds.maxY) / 2;
+                const centerZ = (bounds.minZ + bounds.maxZ) / 2;
+                
+                // Filled volume
+                const boxGeometry = new THREE.BoxGeometry(width * 1.1, height * 1.1, depth * 1.1);
+                const boxMaterial = new THREE.MeshBasicMaterial({
+                    color: clusterColors[i],
+                    transparent: true,
+                    opacity: 0.12,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                box.position.set(centerX, centerY, centerZ);
+                box.userData = {type: 'familyBounds', cluster: i};
+                scene.add(box);
+                
+                // Wireframe edges
+                const edges = new THREE.EdgesGeometry(boxGeometry);
+                const lineMaterial = new THREE.LineBasicMaterial({
+                    color: clusterColors[i],
+                    transparent: true,
+                    opacity: 0.25,
+                    linewidth: 1
+                });
+                const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                wireframe.position.copy(box.position);
+                wireframe.userData = {type: 'familyBounds', cluster: i};
+                scene.add(wireframe);
+            });
+
             // Create sparse region boxes (make them VISIBLE and IMPRESSIVE)
             if (data.sparse_regions) {
                 const gridSize = 1.5; // Approximate grid cell size
