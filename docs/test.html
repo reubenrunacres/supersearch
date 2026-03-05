@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Debug Test</title>
+<script src="lib/three.min.js"></script>
+</head>
+<body>
+<h1>Three.js Test</h1>
+<div id="status">Testing...</div>
+<script>
+const status = document.getElementById('status');
+
+try {
+    if (typeof THREE === 'undefined') {
+        status.textContent = '❌ THREE is undefined - library not loaded';
+        status.style.color = 'red';
+    } else {
+        status.textContent = '✓ THREE loaded: ' + typeof THREE;
+        
+        // Test creating a Color
+        const testColor = new THREE.Color(0x3b82f6);
+        status.textContent += '\n✓ Created color, r=' + testColor.r;
+        
+        // Test the exact code from our file
+        const clusterColors = [
+            new THREE.Color(0x3b82f6),
+            new THREE.Color(0x8b5cf6),
+            new THREE.Color(0xec4899)
+        ];
+        
+        const testMaterial = {cluster: 0};
+        const color = clusterColors[testMaterial.cluster];
+        status.textContent += '\n✓ Color from array: r=' + color.r + ', g=' + color.g + ', b=' + color.b;
+        
+        status.style.color = 'green';
+        status.style.whiteSpace = 'pre';
+    }
+} catch (e) {
+    status.textContent = '❌ Error: ' + e.message + '\n' + e.stack;
+    status.style.color = 'red';
+    status.style.whiteSpace = 'pre';
+}
+</script>
+</body>
+</html>

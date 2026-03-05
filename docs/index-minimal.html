@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSearch</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #0a0e1a; color: #fff; font-family: monospace; overflow: hidden; }
+        #info { position: absolute; top: 20px; left: 20px; z-index: 100; }
+        #canvas { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="info">SuperSearch - Loading...</div>
+    <div id="canvas"></div>
+    <script>
+        const info = document.getElementById('info');
+        const container = document.getElementById('canvas');
+        
+        // Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e1a);
+        
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(80, 60, 80);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        
+        // Light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x3b82f6, 2, 300);
+        pointLight.position.set(60, 60, 60);
+        scene.add(pointLight);
+        
+        // Load data
+        fetch('data/analysis_results_fast.json')
+            .then(r => r.json())
+            .then(data => {
+                info.textContent = `SuperSearch - ${data.materials.length.toLocaleString()} materials`;
+                
+                // Create points
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+                const colors = [];
+                
+                // Simple scaling
+                const xVals = data.materials.map(m => m.x);
+                const yVals = data.materials.map(m => m.y);
+                const tcVals = data.materials.map(m => m.tc);
+                
+                const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+                const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
+                const tcMin = Math.min(...tcVals), tcMax = Math.max(...tcVals);
+                
+                data.materials.forEach(m => {
+                    const x = ((m.x - xMin) / (xMax - xMin) - 0.5) * 60;
+                    const y = ((m.tc - tcMin) / (tcMax - tcMin) - 0.5) * 60;
+                    const z = ((m.y - yMin) / (yMax - yMin) - 0.5) * 60;
+                    
+                    positions.push(x, y, z);
+                    
+                    // Color by Tc
+                    const t = (m.tc - tcMin) / (tcMax - tcMin);
+                    const r = 0.2 + t * 0.8;
+                    const g = 0.3;
+                    const b = 0.9 - t * 0.5;
+                    colors.push(r, g, b);
+                });
+                
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                
+                const material = new THREE.PointsMaterial({
+                    size: 0.8,
+                    vertexColors: true
+                });
+                
+                const points = new THREE.Points(geometry, material);
+                scene.add(points);
+                
+                console.log('✓ Rendered', data.materials.length, 'materials');
+            })
+            .catch(e => {
+                info.textContent = 'Error: ' + e.message;
+                console.error(e);
+            });
+        
+        // Animate
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

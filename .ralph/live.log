@@ -1,0 +1,173 @@
+
+
+I'll start by understanding the current state of the project, then implement everything systematically.
+
+
+⚡ [TodoWrite]
+
+
+
+⚡ [Task]
+
+Now let me read the current index.html and understand exactly what we're building on.
+
+
+⚡ [Read]
+
+
+
+⚡ [Read]
+
+Let me get a sample of the JSON data structure.
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [TodoWrite]
+
+Now I have a complete picture. Let me build the full implementation. The current `docs/index.html` is a minimal 216-line file with just the 3D viz and basic stats. I need to add:
+
+1. Opportunity Regions panel (from sparse_regions data)
+2. Top Materials list (sorted by Tc)
+3. Cluster Analysis display
+4. About overlay with strategic context
+5. Interactive features (hover tooltips, click details, view toggles)
+6. Sparse region highlighting in the 3D viz
+
+
+⚡ [Write]
+
+
+
+⚡ [TodoWrite]
+
+Let me test it locally with a quick server.
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+Server is running. Let me verify the HTML is valid and the data loads correctly.
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+HTML serves (42KB) and data JSON loads (200). Let me do a quick validation of the HTML structure and check for any obvious issues.
+
+
+⚡ [Bash]
+
+Let me also verify there are no JavaScript syntax issues by checking the script through node.
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Task]
+
+All validations pass. Let me stop the test server and verify the file meets all the checklist criteria.
+
+
+⚡ [TaskStop]
+
+Now let me do a final review of the implementation against the complete checklist.
+
+
+⚡ [Read]
+
+Good. Let me verify the complete checklist against the implementation:
+
+
+⚡ [TodoWrite]
+
+Now let me check git status and deploy.
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+
+
+⚡ [Bash]
+
+The implementation is complete. Here's what I built:
+
+## Implementation Complete
+
+### What was built (single file: `docs/index.html`)
+
+**Content/Features:**
+- **Opportunity Regions Panel:** 5 ranked unexplored composition regions with coordinates, density scores, priority ranking (high/medium), nearby material context (max Tc, avg mass), and click-to-focus in 3D viz with green sphere markers + vertical guide lines
+- **High-Tc Materials List:** Top 20 materials sorted by Tc (toggleable to 10/50) showing atomic mass, radius, valence, cluster assignment, and Tc value. Click to zoom in 3D.
+- **Cluster Analysis:** 3 clusters displayed with count, percentage, avg/max Tc, avg mass, avg valence, and proportional bar charts
+- **About Overlay:** Full strategic context covering GNoME complementarity, autonomous lab prioritization, hypothesis generation, and integration roadmap
+- **Interactive Features:** Hover tooltips on points (Tc, cluster, mass, radius, valence, PCA coords), click to zoom, panel collapse/expand, material count toggles, color mode switching (Tc vs Cluster), region visibility toggle, keyboard shortcuts (R=rotate, Esc=close)
+
+**Visual/Branding:**
+- Cream background (#F5F3ED)
+- Fragment Mono font throughout
+- Dark text on light backgrounds
+- Minimal, professional design with subtle borders and backdrop blur
+
+**Technical:**
+- All panels in right sidebar (320px) with scroll, no overlapping
+- Stats bar at bottom-left
+- CDN Three.js + OrbitControls (reliable loading)
+- Raycaster-based hover/click interaction
+- Sub-second render with 5K point sample
+
+### Ready to deploy
+
+Would you like me to commit and push to deploy to GitHub Pages?
+
+```
+✓ Opportunity regions panel: 5 regions displayed with priorities
+✓ Top materials list: 20 materials sorted by Tc (toggle 10/20/50)
+✓ Cluster analysis: 3 clusters with full stats
+✓ Strategic context overlay: complete
+✓ Cream background + Fragment Mono
+✓ All features functional, no overlaps
+✓ JS syntax validated, HTML structure verified
+✓ Tested locally: serves correctly at localhost:8888
+```

@@ -1,0 +1,9 @@
+[0;34m[2026-03-04 12:48:28] [INFO] Setting up tmux session: ralph-1772650108[0m
+[0;32m[2026-03-04 12:48:28] [SUCCESS] Tmux session created with 3 panes:[0m
+[0;34m[2026-03-04 12:48:28] [INFO]   Left:         Ralph loop[0m
+[0;34m[2026-03-04 12:48:28] [INFO]   Right-top:    Claude Code live output[0m
+[0;34m[2026-03-04 12:48:28] [INFO]   Right-bottom: Status monitor[0m
+[0;34m[2026-03-04 12:48:28] [INFO] [0m
+[0;34m[2026-03-04 12:48:28] [INFO] Use Ctrl+B then D to detach from session[0m
+[0;34m[2026-03-04 12:48:28] [INFO] Use 'tmux attach -t ralph-1772650108' to reattach[0m
+open terminal failed: not a terminal

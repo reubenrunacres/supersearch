@@ -4,205 +4,1095 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperSearch - Superconductor Composition Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0a0e1a;
-            color: #e8e8e8;
+            font-family: 'Fragment Mono', monospace;
+            background: #F5F3ED;
+            color: #1a1a1a;
             overflow: hidden;
         }
-        
+
+        /* Header */
         #header {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            padding: 20px 30px;
-            background: linear-gradient(180deg, #0a0e1a 0%, transparent 100%);
+            padding: 16px 24px;
+            background: linear-gradient(180deg, #F5F3ED 60%, rgba(245,243,237,0) 100%);
             z-index: 100;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
         }
-        
         #title {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #1a1a1a;
         }
-        
         #subtitle {
-            font-size: 13px;
+            font-size: 11px;
             color: #888;
             letter-spacing: 0.3px;
         }
-        
-        #info {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(20, 25, 35, 0.9);
-            border: 1px solid rgba(100, 150, 200, 0.3);
-            border-radius: 8px;
-            padding: 15px 20px;
-            font-size: 13px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
+        #header-right {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
-        
-        #stats {
-            margin-top: 8px;
-            color: #aaa;
-            font-size: 12px;
+        .header-btn {
+            background: rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 4px;
+            padding: 5px 12px;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 11px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.15s;
         }
-        
+        .header-btn:hover {
+            background: rgba(0,0,0,0.1);
+            color: #1a1a1a;
+        }
+        .header-btn.active {
+            background: #1a1a1a;
+            color: #F5F3ED;
+            border-color: #1a1a1a;
+        }
+
+        /* 3D Canvas */
         #canvas {
             width: 100vw;
             height: 100vh;
         }
-        
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(245,243,237,0.96);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-size: 11px;
+            line-height: 1.6;
+            z-index: 200;
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            max-width: 260px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        #tooltip .tt-tc {
+            font-size: 14px;
+            font-weight: 400;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        #tooltip .tt-detail {
+            color: #666;
+        }
+
+        /* Side Panels */
+        #panels {
+            position: absolute;
+            top: 56px;
+            right: 12px;
+            bottom: 12px;
+            width: 320px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,0,0,0.15) transparent;
+        }
+        #panels::-webkit-scrollbar { width: 4px; }
+        #panels::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+        .panel {
+            background: rgba(245,243,237,0.94);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .panel-header {
+            padding: 10px 14px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #888;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .panel-header:hover {
+            color: #555;
+        }
+        .panel-toggle {
+            font-size: 9px;
+            transition: transform 0.2s;
+        }
+        .panel-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        .panel-body {
+            padding: 10px 14px;
+            font-size: 11px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .panel-body.collapsed {
+            display: none;
+        }
+
+        /* Stats bar at bottom-left */
+        #stats-bar {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(245,243,237,0.94);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 11px;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            color: #666;
+            display: flex;
+            gap: 20px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .stat-value {
+            font-size: 14px;
+            color: #1a1a1a;
+        }
+        .stat-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #999;
+        }
+
+        /* Opportunity Region List */
+        .region-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .region-item:last-child { border-bottom: none; }
+        .region-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 8px 14px; }
+        .region-rank {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.06);
+            border-radius: 3px;
+            font-size: 10px;
+            color: #555;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .region-rank.priority-high {
+            background: #2d6a4f;
+            color: #fff;
+        }
+        .region-rank.priority-med {
+            background: #6b705c;
+            color: #fff;
+        }
+        .region-coords {
+            font-size: 10px;
+            color: #999;
+            margin-top: 3px;
+        }
+        .region-reason {
+            font-size: 10px;
+            color: #777;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        /* Material List */
+        .material-item {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .material-item:last-child { border-bottom: none; }
+        .material-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 6px 14px; }
+        .mat-rank {
+            color: #bbb;
+            font-size: 10px;
+            width: 20px;
+            flex-shrink: 0;
+        }
+        .mat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .mat-props {
+            font-size: 10px;
+            color: #999;
+        }
+        .mat-tc {
+            font-weight: 400;
+            color: #2d6a4f;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        /* Cluster Stats */
+        .cluster-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cluster-item:last-child { border-bottom: none; }
+        .cluster-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .cluster-info {
+            flex: 1;
+        }
+        .cluster-name {
+            font-size: 11px;
+            color: #1a1a1a;
+        }
+        .cluster-stats {
+            font-size: 10px;
+            color: #999;
+        }
+        .cluster-bar {
+            height: 3px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .cluster-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        /* About Overlay */
+        #about-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        #about-overlay.visible {
+            display: flex;
+        }
+        #about-content {
+            background: #F5F3ED;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 32px 36px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.7;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+            position: relative;
+        }
+        #about-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+            font-family: 'Fragment Mono', monospace;
+            padding: 4px 8px;
+        }
+        #about-close:hover { color: #1a1a1a; }
+        .about-title {
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        .about-section {
+            margin-bottom: 20px;
+        }
+        .about-section h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #888;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+        .about-section p {
+            color: #444;
+            margin-bottom: 8px;
+        }
+        .about-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        .about-section ul li {
+            padding: 3px 0;
+            color: #555;
+        }
+        .about-section ul li::before {
+            content: "→ ";
+            color: #2d6a4f;
+        }
+
+        /* View toggle buttons in panels */
+        .view-toggles {
+            display: flex;
+            gap: 4px;
+            padding: 8px 14px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .view-toggle {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 10px;
+            padding: 3px 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: transparent;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #888;
+            transition: all 0.15s;
+        }
+        .view-toggle:hover { color: #555; border-color: rgba(0,0,0,0.2); }
+        .view-toggle.active {
+            background: #1a1a1a;
+            color: #F5F3ED;
+            border-color: #1a1a1a;
+        }
+
+        /* Loading state */
         .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 16px;
-            color: #3b82f6;
+            font-size: 13px;
+            color: #999;
+            z-index: 50;
+        }
+
+        /* Highlighted region in 3D viz */
+        .region-item.highlighted {
+            background: rgba(45,106,79,0.06);
+            margin: 0 -14px;
+            padding: 8px 14px;
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div id="header">
         <div id="title">SuperSearch</div>
         <div id="subtitle">Superconductor Composition Explorer</div>
+        <div id="header-right">
+            <button class="header-btn" id="btn-color-tc" title="Color by critical temperature">Tc</button>
+            <button class="header-btn" id="btn-color-cluster" title="Color by cluster assignment">Clusters</button>
+            <button class="header-btn" id="btn-regions" title="Toggle opportunity regions in 3D">Regions</button>
+            <button class="header-btn" id="btn-about" title="About SuperSearch">About</button>
+        </div>
     </div>
-    
-    <div id="info">
-        <div class="loading">Loading materials...</div>
-        <div id="stats"></div>
-    </div>
-    
+
+    <!-- 3D Canvas -->
     <div id="canvas"></div>
-    
+    <div class="loading" id="loading-msg">Loading materials...</div>
+
+    <!-- Tooltip -->
+    <div id="tooltip">
+        <div class="tt-tc"></div>
+        <div class="tt-detail"></div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div id="stats-bar" style="display:none;">
+        <div class="stat-item">
+            <span class="stat-value" id="stat-materials">—</span>
+            <span class="stat-label">Materials</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-clusters">—</span>
+            <span class="stat-label">Clusters</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-avg-tc">—</span>
+            <span class="stat-label">Avg Tc</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-max-tc">—</span>
+            <span class="stat-label">Max Tc</span>
+        </div>
+    </div>
+
+    <!-- Side Panels -->
+    <div id="panels" style="display:none;">
+        <!-- Opportunity Regions -->
+        <div class="panel" id="panel-regions">
+            <div class="panel-header" data-panel="regions">
+                <span>Opportunity Regions</span>
+                <span class="panel-toggle" id="toggle-regions">▼</span>
+            </div>
+            <div class="panel-body" id="body-regions"></div>
+        </div>
+
+        <!-- Top Materials -->
+        <div class="panel" id="panel-materials">
+            <div class="panel-header" data-panel="materials">
+                <span>Highest-Tc Materials</span>
+                <span class="panel-toggle" id="toggle-materials">▼</span>
+            </div>
+            <div class="view-toggles" id="mat-toggles">
+                <button class="view-toggle active" data-show="20">Top 20</button>
+                <button class="view-toggle" data-show="10">Top 10</button>
+                <button class="view-toggle" data-show="50">Top 50</button>
+            </div>
+            <div class="panel-body" id="body-materials"></div>
+        </div>
+
+        <!-- Cluster Analysis -->
+        <div class="panel" id="panel-clusters">
+            <div class="panel-header" data-panel="clusters">
+                <span>Cluster Analysis</span>
+                <span class="panel-toggle" id="toggle-clusters">▼</span>
+            </div>
+            <div class="panel-body" id="body-clusters"></div>
+        </div>
+    </div>
+
+    <!-- About Overlay -->
+    <div id="about-overlay">
+        <div id="about-content">
+            <button id="about-close">×</button>
+            <div class="about-title">About SuperSearch</div>
+
+            <div class="about-section">
+                <h3>What is this?</h3>
+                <p>SuperSearch maps the known superconductor composition space using dimensionality reduction (PCA) on 21,263 materials from the UCI Superconductivity Database. Each point represents a material, positioned by its elemental composition features and colored by critical temperature (Tc).</p>
+            </div>
+
+            <div class="about-section">
+                <h3>Complementing GNoME Predictions</h3>
+                <p>Google DeepMind's GNoME predicted 380,000+ stable crystal structures, but predicting stability is different from predicting superconductivity. SuperSearch identifies where experimental coverage is thin — the gaps between known materials that GNoME's candidates could fill.</p>
+                <ul>
+                    <li>GNoME provides candidate structures</li>
+                    <li>SuperSearch shows where to look first</li>
+                    <li>Together: targeted synthesis priorities</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h3>Guiding Autonomous Lab Prioritization</h3>
+                <p>For an autonomous lab deciding what to synthesize next, composition space coverage matters. The opportunity regions highlighted here represent unexplored neighborhoods adjacent to known high-Tc materials — the highest-value targets for experimental campaigns.</p>
+                <ul>
+                    <li>Sparse regions → experimental priorities</li>
+                    <li>Cluster boundaries → composition phase transitions</li>
+                    <li>High-Tc patterns → hypothesis generation</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h3>Hypothesis Generation</h3>
+                <p>SuperSearch enables systematic hypothesis generation: "Materials with atomic mass 85–115 and valence ~2.0–2.5 cluster in the high-Tc region. Unexplored compositions in adjacent sparse zones with similar properties are strong synthesis candidates."</p>
+            </div>
+
+            <div class="about-section">
+                <h3>Integration Roadmap</h3>
+                <ul>
+                    <li>Phase 1: Visual exploration tool (current)</li>
+                    <li>Phase 2: API for autonomous lab integration</li>
+                    <li>Phase 3: Real-time feedback from synthesis results</li>
+                    <li>Phase 4: Active learning loop with AI scientist</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h3>Data</h3>
+                <p>21,263 superconductors from the UCI Superconductivity Database (Hamidieh, 2018). Features: mean atomic mass, atomic radius, valence, and 7 other elemental statistics. PCA retains 73.5% variance in 2 components. DBSCAN identifies 3 composition families. 5,000-point sample displayed for performance.</p>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const infoDiv = document.querySelector('#info .loading');
-        const statsDiv = document.getElementById('stats');
-        const container = document.getElementById('canvas');
-        
-        // Scene setup
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0e1a);
-        scene.fog = new THREE.Fog(0x0a0e1a, 50, 200);
-        
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(80, 60, 80);
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-        
-        // Controls
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.3;
-        
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        const pointLight1 = new THREE.PointLight(0x3b82f6, 2, 300);
-        pointLight1.position.set(60, 60, 60);
-        scene.add(pointLight1);
-        
-        const pointLight2 = new THREE.PointLight(0x8b5cf6, 1.5, 300);
-        pointLight2.position.set(-60, -30, -60);
-        scene.add(pointLight2);
-        
-        // Load and render materials
-        fetch('data/analysis_results_fast.json')
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                const materials = data.materials;
-                infoDiv.textContent = `${materials.length.toLocaleString()} superconductor materials`;
-                
-                // Show stats
-                const clusters = new Set(materials.map(m => m.cluster)).size;
-                const avgTc = (materials.reduce((sum, m) => sum + m.tc, 0) / materials.length).toFixed(1);
-                statsDiv.innerHTML = `${clusters} clusters • Avg Tc: ${avgTc}K`;
-                
-                // Create geometry
-                const geometry = new THREE.BufferGeometry();
-                const positions = [];
-                const colors = [];
-                
-                // Calculate ranges
-                const xVals = materials.map(m => m.x);
-                const yVals = materials.map(m => m.y);
-                const tcVals = materials.map(m => m.tc);
-                
-                const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
-                const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
-                const tcMin = Math.min(...tcVals), tcMax = Math.max(...tcVals);
-                
-                materials.forEach(m => {
-                    // Scale to 3D space
-                    const x = ((m.x - xMin) / (xMax - xMin) - 0.5) * 60;
-                    const y = ((m.tc - tcMin) / (tcMax - tcMin) - 0.5) * 60;
-                    const z = ((m.y - yMin) / (yMax - yMin) - 0.5) * 60;
-                    
-                    positions.push(x, y, z);
-                    
-                    // Color by Tc (blue to pink gradient)
-                    const t = (m.tc - tcMin) / (tcMax - tcMin);
-                    const r = 0.2 + t * 0.8;
-                    const g = 0.3;
-                    const b = 0.9 - t * 0.5;
-                    colors.push(r, g, b);
-                });
-                
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-                
-                const material = new THREE.PointsMaterial({
-                    size: 0.8,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.8,
-                    sizeAttenuation: true
-                });
-                
-                const points = new THREE.Points(geometry, material);
-                scene.add(points);
-                
-                console.log('✓ Rendered', materials.length, 'materials');
-            })
-            .catch(e => {
-                infoDiv.textContent = 'Error: ' + e.message;
-                infoDiv.style.color = '#ef4444';
-                console.error('Load error:', e);
-            });
-        
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+    // ─── State ───────────────────────────────────────────────────────
+    let allMaterials = [];
+    let sortedByTc = [];
+    let sparseRegions = [];
+    let metadata = {};
+    let regionMeshes = [];
+    let showRegions = true;
+    let colorMode = 'tc'; // 'tc' or 'cluster'
+    let pointCloud = null;
+    let materialCount = 20;
+
+    // Data ranges (set after load)
+    let xMin, xMax, yMin, yMax, tcMin, tcMax;
+
+    // Raycaster for hover/click
+    const raycaster = new THREE.Raycaster();
+    raycaster.params.Points.threshold = 1.2;
+    const mouse = new THREE.Vector2();
+    let hoveredIndex = -1;
+
+    // ─── Scene Setup ─────────────────────────────────────────────────
+    const bgColor = 0xF5F3ED;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(bgColor);
+    scene.fog = new THREE.Fog(bgColor, 100, 300);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(80, 60, 80);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.getElementById('canvas').appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.3;
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const light1 = new THREE.PointLight(0xffffff, 1.5, 300);
+    light1.position.set(60, 60, 60);
+    scene.add(light1);
+    const light2 = new THREE.PointLight(0xffffff, 1.0, 300);
+    light2.position.set(-60, -30, -60);
+    scene.add(light2);
+
+    // ─── Color Functions ─────────────────────────────────────────────
+    const clusterColors = [
+        [0.18, 0.42, 0.31],  // Cluster 0: deep teal-green
+        [0.55, 0.27, 0.07],  // Cluster 1: warm brown
+        [0.40, 0.30, 0.55],  // Cluster -1: muted purple (outliers)
+    ];
+
+    function getTcColor(tc) {
+        const t = (tc - tcMin) / (tcMax - tcMin);
+        return [
+            0.65 - t * 0.45,  // R: 0.65 → 0.20
+            0.30 + t * 0.25,  // G: 0.30 → 0.55
+            0.25 + t * 0.40   // B: 0.25 → 0.65
+        ];
+    }
+
+    function getClusterColor(cluster) {
+        if (cluster === 0) return clusterColors[0];
+        if (cluster === 1) return clusterColors[1];
+        return clusterColors[2]; // -1 / outliers
+    }
+
+    function getClusterHex(cluster) {
+        const c = getClusterColor(cluster);
+        const r = Math.round(c[0] * 255);
+        const g = Math.round(c[1] * 255);
+        const b = Math.round(c[2] * 255);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    // ─── Coordinate Mapping ──────────────────────────────────────────
+    function toSceneCoords(m) {
+        return {
+            x: ((m.x - xMin) / (xMax - xMin) - 0.5) * 60,
+            y: ((m.tc - tcMin) / (tcMax - tcMin) - 0.5) * 60,
+            z: ((m.y - yMin) / (yMax - yMin) - 0.5) * 60
+        };
+    }
+
+    // Map sparse region (which uses PCA x,y) to scene coords
+    function regionToScene(r) {
+        // Sparse regions use same x,y as material PCA coords
+        // tc (height) we place at the bottom of the scene to show they're unexplored
+        return {
+            x: ((r.x - xMin) / (xMax - xMin) - 0.5) * 60,
+            y: -30 + Math.random() * 5, // near bottom
+            z: ((r.y - yMin) / (yMax - yMin) - 0.5) * 60
+        };
+    }
+
+    // ─── Build Point Cloud ───────────────────────────────────────────
+    function buildPointCloud(materials) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(materials.length * 3);
+        const colors = new Float32Array(materials.length * 3);
+
+        materials.forEach((m, i) => {
+            const p = toSceneCoords(m);
+            positions[i * 3] = p.x;
+            positions[i * 3 + 1] = p.y;
+            positions[i * 3 + 2] = p.z;
+
+            const c = colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
+            colors[i * 3] = c[0];
+            colors[i * 3 + 1] = c[1];
+            colors[i * 3 + 2] = c[2];
         });
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.8,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            sizeAttenuation: true
+        });
+
+        if (pointCloud) scene.remove(pointCloud);
+        pointCloud = new THREE.Points(geometry, material);
+        scene.add(pointCloud);
+    }
+
+    // ─── Build Region Markers ────────────────────────────────────────
+    function buildRegionMarkers(regions) {
+        // Remove old markers
+        regionMeshes.forEach(m => scene.remove(m));
+        regionMeshes = [];
+
+        regions.forEach((r, i) => {
+            const pos = regionToScene(r);
+            // Translucent sphere at region location
+            const geo = new THREE.SphereGeometry(2.5 - r.density * 0.3, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x2d6a4f,
+                transparent: true,
+                opacity: 0.15,
+                wireframe: false
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(pos.x, pos.y, pos.z);
+            mesh.userData = { regionIndex: i };
+
+            // Wire outline
+            const wireGeo = new THREE.SphereGeometry(2.5 - r.density * 0.3, 12, 12);
+            const wireMat = new THREE.MeshBasicMaterial({
+                color: 0x2d6a4f,
+                transparent: true,
+                opacity: 0.3,
+                wireframe: true
+            });
+            const wire = new THREE.Mesh(wireGeo, wireMat);
+            wire.position.copy(mesh.position);
+
+            // Vertical line from region up through the Tc axis
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(pos.x, pos.y, pos.z),
+                new THREE.Vector3(pos.x, pos.y + 40, pos.z)
+            ]);
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0x2d6a4f,
+                transparent: true,
+                opacity: 0.12
+            });
+            const line = new THREE.Line(lineGeo, lineMat);
+
+            scene.add(mesh);
+            scene.add(wire);
+            scene.add(line);
+            regionMeshes.push(mesh, wire, line);
+        });
+    }
+
+    function toggleRegionVisibility(visible) {
+        regionMeshes.forEach(m => { m.visible = visible; });
+    }
+
+    // ─── Populate Panels ─────────────────────────────────────────────
+    function populateRegions(regions) {
+        const body = document.getElementById('body-regions');
+        if (regions.length === 0) {
+            body.innerHTML = '<div style="color:#999;">No sparse regions in this dataset sample.</div>';
+            return;
+        }
+
+        // Sort by density (lower = more sparse = higher priority)
+        const sorted = regions.map((r, i) => ({ ...r, originalIndex: i }))
+            .sort((a, b) => a.density - b.density);
+
+        // Find nearby materials for context
+        body.innerHTML = sorted.map((r, i) => {
+            const priority = r.density <= 1 ? 'high' : 'med';
+            const nearbyMats = allMaterials.filter(m => {
+                const dx = m.x - r.x;
+                const dy = m.y - r.y;
+                return Math.sqrt(dx * dx + dy * dy) < 2.0;
+            });
+            const nearbyMaxTc = nearbyMats.length > 0
+                ? Math.max(...nearbyMats.map(m => m.tc)).toFixed(1)
+                : '?';
+            const avgMass = nearbyMats.length > 0
+                ? (nearbyMats.reduce((s, m) => s + m.atomic_mass, 0) / nearbyMats.length).toFixed(1)
+                : '?';
+
+            const reason = r.density <= 1
+                ? `Lowest density zone — highest synthesis priority`
+                : `Adjacent to materials with Tc up to ${nearbyMaxTc}K`;
+
+            return `<div class="region-item" data-region="${r.originalIndex}" onclick="focusRegion(${r.originalIndex})">
+                <span class="region-rank priority-${priority}">${i + 1}</span>
+                <strong>Region ${i + 1}</strong>
+                <div class="region-coords">PCA: (${r.x.toFixed(2)}, ${r.y.toFixed(2)}) · density: ${r.density}</div>
+                <div class="region-reason">${reason}</div>
+                <div class="region-coords">Nearby avg mass: ${avgMass} · Nearby max Tc: ${nearbyMaxTc}K</div>
+            </div>`;
+        }).join('');
+    }
+
+    function populateMaterials(count) {
+        const body = document.getElementById('body-materials');
+        const top = sortedByTc.slice(0, count);
+
+        body.innerHTML = top.map((m, i) => {
+            return `<div class="material-item" data-index="${allMaterials.indexOf(m)}" onclick="focusMaterial(${allMaterials.indexOf(m)})">
+                <span class="mat-rank">${i + 1}</span>
+                <div class="mat-info">
+                    <div>Mass: ${m.atomic_mass.toFixed(1)} · Radius: ${m.atomic_radius.toFixed(0)}pm</div>
+                    <div class="mat-props">Valence: ${m.valence.toFixed(2)} · Cluster ${m.cluster}</div>
+                </div>
+                <span class="mat-tc">${m.tc}K</span>
+            </div>`;
+        }).join('');
+    }
+
+    function populateClusters(materials) {
+        const body = document.getElementById('body-clusters');
+        const clusterMap = {};
+        materials.forEach(m => {
+            if (!clusterMap[m.cluster]) clusterMap[m.cluster] = [];
+            clusterMap[m.cluster].push(m);
+        });
+
+        const clusterNames = { '-1': 'Outliers', '0': 'Primary Family', '1': 'Secondary Family' };
+        const total = materials.length;
+
+        body.innerHTML = Object.keys(clusterMap).sort((a, b) => clusterMap[b].length - clusterMap[a].length).map(cid => {
+            const mats = clusterMap[cid];
+            const tcs = mats.map(m => m.tc);
+            const avgTc = (tcs.reduce((s, v) => s + v, 0) / tcs.length).toFixed(1);
+            const maxTc = Math.max(...tcs).toFixed(1);
+            const minTc = Math.min(...tcs).toFixed(4);
+            const avgMass = (mats.reduce((s, m) => s + m.atomic_mass, 0) / mats.length).toFixed(1);
+            const avgValence = (mats.reduce((s, m) => s + m.valence, 0) / mats.length).toFixed(2);
+            const pct = ((mats.length / total) * 100).toFixed(1);
+            const color = getClusterHex(parseInt(cid));
+            const barWidth = (mats.length / total) * 100;
+
+            return `<div class="cluster-item">
+                <div class="cluster-dot" style="background:${color}"></div>
+                <div class="cluster-info">
+                    <div class="cluster-name">${clusterNames[cid] || 'Cluster ' + cid}</div>
+                    <div class="cluster-stats">${mats.length.toLocaleString()} materials (${pct}%) · Avg Tc: ${avgTc}K · Max: ${maxTc}K</div>
+                    <div class="cluster-stats">Avg mass: ${avgMass} · Avg valence: ${avgValence}</div>
+                    <div class="cluster-bar"><div class="cluster-bar-fill" style="width:${barWidth}%;background:${color}"></div></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ─── Interaction: Focus on Region ────────────────────────────────
+    function focusRegion(index) {
+        controls.autoRotate = false;
+        const r = sparseRegions[index];
+        const pos = regionToScene(r);
+        // Smoothly move camera to look at region
+        const target = new THREE.Vector3(pos.x, pos.y, pos.z);
+        animateCameraTo(target, 40);
+
+        // Highlight in panel
+        document.querySelectorAll('.region-item').forEach(el => el.classList.remove('highlighted'));
+        const el = document.querySelector(`.region-item[data-region="${index}"]`);
+        if (el) el.classList.add('highlighted');
+
+        // Make sure regions are visible
+        if (!showRegions) {
+            showRegions = true;
+            toggleRegionVisibility(true);
+            document.getElementById('btn-regions').classList.add('active');
+        }
+    }
+
+    function focusMaterial(index) {
+        controls.autoRotate = false;
+        const m = allMaterials[index];
+        const p = toSceneCoords(m);
+        const target = new THREE.Vector3(p.x, p.y, p.z);
+        animateCameraTo(target, 25);
+    }
+
+    function animateCameraTo(target, distance) {
+        controls.target.copy(target);
+        // Move camera to offset from target
+        const dir = camera.position.clone().sub(controls.target).normalize();
+        const newPos = target.clone().add(dir.multiplyScalar(distance));
+        camera.position.copy(newPos);
+    }
+
+    // ─── Hover Tooltip ───────────────────────────────────────────────
+    const tooltip = document.getElementById('tooltip');
+    const ttTc = tooltip.querySelector('.tt-tc');
+    const ttDetail = tooltip.querySelector('.tt-detail');
+
+    function onMouseMove(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        if (!pointCloud) return;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(pointCloud);
+
+        if (intersects.length > 0) {
+            const idx = intersects[0].index;
+            if (idx !== hoveredIndex) {
+                hoveredIndex = idx;
+                const m = allMaterials[idx];
+                ttTc.textContent = `Tc: ${m.tc}K`;
+                ttDetail.innerHTML = `Cluster: ${m.cluster}<br>Atomic mass: ${m.atomic_mass.toFixed(1)}<br>Atomic radius: ${m.atomic_radius.toFixed(0)}pm<br>Valence: ${m.valence.toFixed(2)}<br>PCA: (${m.x.toFixed(2)}, ${m.y.toFixed(2)})`;
+            }
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.clientX + 14) + 'px';
+            tooltip.style.top = (event.clientY - 14) + 'px';
+
+            // Keep tooltip in viewport
+            const rect = tooltip.getBoundingClientRect();
+            if (rect.right > window.innerWidth - 10) {
+                tooltip.style.left = (event.clientX - rect.width - 14) + 'px';
+            }
+            if (rect.bottom > window.innerHeight - 10) {
+                tooltip.style.top = (event.clientY - rect.height - 14) + 'px';
+            }
+
+            document.body.style.cursor = 'pointer';
+        } else {
+            tooltip.style.display = 'none';
+            hoveredIndex = -1;
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    function onClick(event) {
+        if (!pointCloud) return;
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(pointCloud);
+
+        if (intersects.length > 0) {
+            const idx = intersects[0].index;
+            focusMaterial(idx);
+        }
+    }
+
+    renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+    renderer.domElement.addEventListener('click', onClick, false);
+
+    // ─── Panel Toggles ───────────────────────────────────────────────
+    document.querySelectorAll('.panel-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const panelName = header.dataset.panel;
+            const body = document.getElementById('body-' + panelName);
+            const toggle = document.getElementById('toggle-' + panelName);
+            const togglesRow = header.nextElementSibling;
+
+            if (body.classList.contains('collapsed')) {
+                body.classList.remove('collapsed');
+                toggle.classList.remove('collapsed');
+                // Also show view-toggles row if it exists
+                if (togglesRow && togglesRow.classList.contains('view-toggles')) {
+                    togglesRow.style.display = '';
+                }
+            } else {
+                body.classList.add('collapsed');
+                toggle.classList.add('collapsed');
+                if (togglesRow && togglesRow.classList.contains('view-toggles')) {
+                    togglesRow.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // ─── Material Count Toggles ──────────────────────────────────────
+    document.getElementById('mat-toggles').addEventListener('click', (e) => {
+        const btn = e.target.closest('.view-toggle');
+        if (!btn) return;
+        document.querySelectorAll('#mat-toggles .view-toggle').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        materialCount = parseInt(btn.dataset.show);
+        populateMaterials(materialCount);
+    });
+
+    // ─── Header Button Handlers ──────────────────────────────────────
+    const btnColorTc = document.getElementById('btn-color-tc');
+    const btnColorCluster = document.getElementById('btn-color-cluster');
+    const btnRegions = document.getElementById('btn-regions');
+    const btnAbout = document.getElementById('btn-about');
+
+    btnColorTc.classList.add('active');
+    btnRegions.classList.add('active');
+
+    btnColorTc.addEventListener('click', () => {
+        colorMode = 'tc';
+        btnColorTc.classList.add('active');
+        btnColorCluster.classList.remove('active');
+        if (allMaterials.length) buildPointCloud(allMaterials);
+    });
+
+    btnColorCluster.addEventListener('click', () => {
+        colorMode = 'cluster';
+        btnColorCluster.classList.add('active');
+        btnColorTc.classList.remove('active');
+        if (allMaterials.length) buildPointCloud(allMaterials);
+    });
+
+    btnRegions.addEventListener('click', () => {
+        showRegions = !showRegions;
+        btnRegions.classList.toggle('active', showRegions);
+        toggleRegionVisibility(showRegions);
+    });
+
+    btnAbout.addEventListener('click', () => {
+        document.getElementById('about-overlay').classList.add('visible');
+    });
+
+    document.getElementById('about-close').addEventListener('click', () => {
+        document.getElementById('about-overlay').classList.remove('visible');
+    });
+
+    document.getElementById('about-overlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            e.currentTarget.classList.remove('visible');
+        }
+    });
+
+    // ─── Load Data ───────────────────────────────────────────────────
+    fetch('data/analysis_results_fast.json')
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(data => {
+            allMaterials = data.materials;
+            sparseRegions = data.sparse_regions || [];
+            metadata = data.metadata || {};
+
+            // Calculate ranges
+            const xVals = allMaterials.map(m => m.x);
+            const yVals = allMaterials.map(m => m.y);
+            const tcVals = allMaterials.map(m => m.tc);
+            xMin = Math.min(...xVals); xMax = Math.max(...xVals);
+            yMin = Math.min(...yVals); yMax = Math.max(...yVals);
+            tcMin = Math.min(...tcVals); tcMax = Math.max(...tcVals);
+
+            // Sort by Tc
+            sortedByTc = [...allMaterials].sort((a, b) => b.tc - a.tc);
+
+            // Hide loading, show UI
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('stats-bar').style.display = '';
+            document.getElementById('panels').style.display = '';
+
+            // Stats bar
+            const clusters = new Set(allMaterials.map(m => m.cluster)).size;
+            const avgTc = (allMaterials.reduce((s, m) => s + m.tc, 0) / allMaterials.length).toFixed(1);
+            document.getElementById('stat-materials').textContent = allMaterials.length.toLocaleString();
+            document.getElementById('stat-clusters').textContent = clusters;
+            document.getElementById('stat-avg-tc').textContent = avgTc + 'K';
+            document.getElementById('stat-max-tc').textContent = (metadata.tc_range ? metadata.tc_range.max : tcMax) + 'K';
+
+            // Build visualization
+            buildPointCloud(allMaterials);
+            buildRegionMarkers(sparseRegions);
+
+            // Populate panels
+            populateRegions(sparseRegions);
+            populateMaterials(materialCount);
+            populateClusters(allMaterials);
+
+            console.log('SuperSearch loaded:', allMaterials.length, 'materials,', sparseRegions.length, 'regions');
+        })
+        .catch(e => {
+            document.getElementById('loading-msg').textContent = 'Error: ' + e.message;
+            document.getElementById('loading-msg').style.color = '#c53030';
+            console.error('Load error:', e);
+        });
+
+    // ─── Animation Loop ──────────────────────────────────────────────
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // ─── Resize Handler ──────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ─── Keyboard Shortcuts ──────────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('about-overlay').classList.remove('visible');
+        }
+        if (e.key === 'r' || e.key === 'R') {
+            controls.autoRotate = !controls.autoRotate;
+        }
+    });
     </script>
 </body>
 </html>
