@@ -585,18 +585,21 @@
         renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Post-processing with bloom (reduced on mobile)
-        const composer = new THREE.EffectComposer(renderer);
-        const renderPass = new THREE.RenderPass(scene, camera);
-        composer.addPass(renderPass);
+        // Post-processing with bloom (DISABLED on mobile for performance)
+        let composer;
+        if (!isMobile) {
+            composer = new THREE.EffectComposer(renderer);
+            const renderPass = new THREE.RenderPass(scene, camera);
+            composer.addPass(renderPass);
 
-        const bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(container.clientWidth, container.clientHeight),
-            isMobile ? 0.5 : 0.8,  // strength (reduced on mobile)
-            0.4,  // radius
-            0.85  // threshold
-        );
-        composer.addPass(bloomPass);
+            const bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(container.clientWidth, container.clientHeight),
+                0.8,  // strength
+                0.4,  // radius
+                0.85  // threshold
+            );
+            composer.addPass(bloomPass);
+        }
 
         // Orbit controls (mobile-optimized)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -616,34 +619,41 @@
         controls.rotateSpeed = isMobile ? 0.8 : 1.0;
         controls.zoomSpeed = isMobile ? 1.5 : 1.2;
 
-        // Enhanced Lighting Setup
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        // Lighting Setup (simplified on mobile for performance)
+        const ambientLight = new THREE.AmbientLight(0xffffff, isMobile ? 0.6 : 0.4);
         scene.add(ambientLight);
 
-        // Main point lights with increased intensity
-        const pointLight1 = new THREE.PointLight(0x3b82f6, 3.5, 400);
-        pointLight1.position.set(60, 60, 60);
-        scene.add(pointLight1);
+        if (isMobile) {
+            // Mobile: Single point light for performance
+            const pointLight = new THREE.PointLight(0x3b82f6, 2, 300);
+            pointLight.position.set(60, 60, 60);
+            scene.add(pointLight);
+        } else {
+            // Desktop: Multiple lights for dramatic effect
+            const pointLight1 = new THREE.PointLight(0x3b82f6, 3.5, 400);
+            pointLight1.position.set(60, 60, 60);
+            scene.add(pointLight1);
 
-        const pointLight2 = new THREE.PointLight(0xec4899, 2.5, 400);
-        pointLight2.position.set(-60, -40, -60);
-        scene.add(pointLight2);
+            const pointLight2 = new THREE.PointLight(0xec4899, 2.5, 400);
+            pointLight2.position.set(-60, -40, -60);
+            scene.add(pointLight2);
 
-        const pointLight3 = new THREE.PointLight(0x8b5cf6, 2, 300);
-        pointLight3.position.set(0, 80, 0);
-        scene.add(pointLight3);
+            const pointLight3 = new THREE.PointLight(0x8b5cf6, 2, 300);
+            pointLight3.position.set(0, 80, 0);
+            scene.add(pointLight3);
 
-        // Rim light for dramatic effect
-        const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.2);
-        rimLight.position.set(-50, 50, -50);
-        scene.add(rimLight);
+            // Rim light for dramatic effect
+            const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.2);
+            rimLight.position.set(-50, 50, -50);
+            scene.add(rimLight);
 
-        // Top spotlight for depth
-        const spotLight = new THREE.SpotLight(0xffffff, 0.8, 300, Math.PI / 6, 0.5, 1);
-        spotLight.position.set(0, 100, 0);
-        spotLight.target.position.set(0, 0, 0);
-        scene.add(spotLight);
-        scene.add(spotLight.target);
+            // Top spotlight for depth
+            const spotLight = new THREE.SpotLight(0xffffff, 0.8, 300, Math.PI / 6, 0.5, 1);
+            spotLight.position.set(0, 100, 0);
+            spotLight.target.position.set(0, 0, 0);
+            scene.add(spotLight);
+            scene.add(spotLight.target);
+        }
 
         // Grid and axes
         const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
@@ -812,59 +822,61 @@
                 }
             });
 
-            // Create convex hulls for each cluster
-            const clusterPoints = [[], [], []];
-            data.materials.forEach(material => {
-                const x = xScale(material.x);
-                const y = zScale(material.tc);
-                const z = yScale(material.y);
-                clusterPoints[material.cluster].push(new THREE.Vector3(x, y, z));
-            });
+            // Create convex hulls for each cluster (DESKTOP ONLY - too expensive for mobile)
+            if (!isMobile) {
+                const clusterPoints = [[], [], []];
+                data.materials.forEach(material => {
+                    const x = xScale(material.x);
+                    const y = zScale(material.tc);
+                    const z = yScale(material.y);
+                    clusterPoints[material.cluster].push(new THREE.Vector3(x, y, z));
+                });
 
-            clusterPoints.forEach((points, i) => {
-                if (points.length < 4) return; // Need at least 4 points for convex hull
-                if (!THREE.ConvexGeometry) {
-                    console.warn('ConvexGeometry not available, skipping hulls');
-                    return;
-                }
-                
-                try {
-                    // Create convex hull geometry
-                    const hullGeometry = new THREE.ConvexGeometry(points);
+                clusterPoints.forEach((points, i) => {
+                    if (points.length < 4) return; // Need at least 4 points for convex hull
+                    if (!THREE.ConvexGeometry) {
+                        console.warn('ConvexGeometry not available, skipping hulls');
+                        return;
+                    }
                     
-                    // Filled hull with breathing animation
-                    const hullMaterial = new THREE.MeshPhongMaterial({
-                        color: clusterColors[i],
-                        transparent: true,
-                        opacity: 0.15,
-                        side: THREE.DoubleSide,
-                        depthWrite: false,
-                        shininess: 30
-                    });
-                    const hull = new THREE.Mesh(hullGeometry, hullMaterial);
-                    hull.userData = {
-                        type: 'convexHull', 
-                        cluster: i,
-                        baseOpacity: 0.15,
-                        phase: Math.random() * Math.PI * 2 // Random phase for animation
-                    };
-                    scene.add(hull);
-                    
-                    // Wireframe edges for hull
-                    const edges = new THREE.EdgesGeometry(hullGeometry);
-                    const lineMaterial = new THREE.LineBasicMaterial({
-                        color: clusterColors[i],
-                        transparent: true,
-                        opacity: 0.4,
-                        linewidth: 2
-                    });
-                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
-                    wireframe.userData = {type: 'convexHull', cluster: i};
-                    scene.add(wireframe);
-                } catch (e) {
-                    console.warn(`Could not create convex hull for cluster ${i}:`, e);
-                }
-            });
+                    try {
+                        // Create convex hull geometry
+                        const hullGeometry = new THREE.ConvexGeometry(points);
+                        
+                        // Filled hull with breathing animation
+                        const hullMaterial = new THREE.MeshPhongMaterial({
+                            color: clusterColors[i],
+                            transparent: true,
+                            opacity: 0.15,
+                            side: THREE.DoubleSide,
+                            depthWrite: false,
+                            shininess: 30
+                        });
+                        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                        hull.userData = {
+                            type: 'convexHull', 
+                            cluster: i,
+                            baseOpacity: 0.15,
+                            phase: Math.random() * Math.PI * 2 // Random phase for animation
+                        };
+                        scene.add(hull);
+                        
+                        // Wireframe edges for hull
+                        const edges = new THREE.EdgesGeometry(hullGeometry);
+                        const lineMaterial = new THREE.LineBasicMaterial({
+                            color: clusterColors[i],
+                            transparent: true,
+                            opacity: 0.4,
+                            linewidth: 2
+                        });
+                        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                        wireframe.userData = {type: 'convexHull', cluster: i};
+                        scene.add(wireframe);
+                    } catch (e) {
+                        console.warn(`Could not create convex hull for cluster ${i}:`, e);
+                    }
+                });
+            }
 
             // Create sparse region boxes with opportunity ranking
             if (data.sparse_regions) {
@@ -903,7 +915,12 @@
                 const minScore = Math.min(...scores);
                 const maxScore = Math.max(...scores);
                 
-                regionScores.forEach((item, index) => {
+                // On mobile, show only top 10 highest-opportunity regions for performance
+                const regionsToShow = isMobile 
+                    ? regionScores.sort((a, b) => b.score - a.score).slice(0, 10)
+                    : regionScores;
+                
+                regionsToShow.forEach((item, index) => {
                     const region = item.region;
                     const score = item.score;
                     const normalizedScore = (score - minScore) / (maxScore - minScore || 1);
@@ -1109,16 +1126,23 @@
                 }
             });
 
-            // Animate convex hulls (breathing effect)
-            scene.children.forEach(child => {
-                if (child.userData.type === 'convexHull' && child.userData.baseOpacity !== undefined) {
-                    const time = Date.now() * 0.0008;
-                    const pulse = Math.sin(time + child.userData.phase) * 0.05;
-                    child.material.opacity = child.userData.baseOpacity + pulse;
-                }
-            });
+            // Animate convex hulls (breathing effect) - desktop only
+            if (!isMobile) {
+                scene.children.forEach(child => {
+                    if (child.userData.type === 'convexHull' && child.userData.baseOpacity !== undefined) {
+                        const time = Date.now() * 0.0008;
+                        const pulse = Math.sin(time + child.userData.phase) * 0.05;
+                        child.material.opacity = child.userData.baseOpacity + pulse;
+                    }
+                });
+            }
 
-            composer.render();
+            // Render (use composer on desktop, direct renderer on mobile)
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
         }
 
         animate();
@@ -1128,7 +1152,9 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
-            composer.setSize(container.clientWidth, container.clientHeight);
+            if (composer) {
+                composer.setSize(container.clientWidth, container.clientHeight);
+            }
         });
 
         // Keyboard shortcuts
@@ -1276,19 +1302,21 @@
             panel.style.display = 'block';
         }
 
-        // Add tour button to controls
-        const controlsDiv = document.getElementById('controls');
-        const tourButton = document.createElement('button');
-        tourButton.textContent = 'Start Tour';
-        tourButton.onclick = startTour;
-        tourButton.style.marginTop = '16px';
-        controlsDiv.appendChild(tourButton);
+        // Add tour button to controls (desktop only - simplify mobile UI)
+        if (!isMobile) {
+            const controlsDiv = document.getElementById('controls');
+            const tourButton = document.createElement('button');
+            tourButton.textContent = 'Start Tour';
+            tourButton.onclick = startTour;
+            tourButton.style.marginTop = '16px';
+            controlsDiv.appendChild(tourButton);
 
-        const insightsButton = document.createElement('button');
-        insightsButton.textContent = 'Show Insights';
-        insightsButton.onclick = toggleInsights;
-        insightsButton.style.marginTop = '8px';
-        controlsDiv.appendChild(insightsButton);
+            const insightsButton = document.createElement('button');
+            insightsButton.textContent = 'Show Insights';
+            insightsButton.onclick = toggleInsights;
+            insightsButton.style.marginTop = '8px';
+            controlsDiv.appendChild(insightsButton);
+        }
     </script>
 </body>
 </html>
