@@ -786,6 +786,10 @@
 
             clusterPoints.forEach((points, i) => {
                 if (points.length < 4) return; // Need at least 4 points for convex hull
+                if (!THREE.ConvexGeometry) {
+                    console.warn('ConvexGeometry not available, skipping hulls');
+                    return;
+                }
                 
                 try {
                     // Create convex hull geometry
