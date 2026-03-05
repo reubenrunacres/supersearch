@@ -647,36 +647,89 @@
                 scene.add(wireframe);
             });
 
-            // Create sparse region boxes (make them VISIBLE and IMPRESSIVE)
+            // Create sparse region boxes with opportunity ranking
             if (data.sparse_regions) {
                 const gridSize = 1.5; // Approximate grid cell size
                 
-                data.sparse_regions.forEach((region, index) => {
+                // Calculate opportunity scores for each region
+                const regionScores = data.sparse_regions.map(region => {
+                    const rx = xScale(region.x);
+                    const rz = yScale(region.y);
+                    
+                    // Find nearest high-Tc material (Tc > 100K)
+                    let minDist = Infinity;
+                    data.materials.forEach(m => {
+                        if (m.tc > 100) {
+                            const mx = xScale(m.x);
+                            const mz = yScale(m.y);
+                            const dist = Math.sqrt((rx - mx) ** 2 + (rz - mz) ** 2);
+                            minDist = Math.min(minDist, dist);
+                        }
+                    });
+                    
+                    // Opportunity score: inverse distance (closer = higher score)
+                    const proximityScore = 1 / (minDist + 1);
+                    
+                    // Density score: regions with density=1 or 2 are highest opportunity
+                    const densityScore = region.density <= 2 ? 1.0 : 0.5;
+                    
+                    // Composite score (weighted)
+                    const score = proximityScore * 0.6 + densityScore * 0.4;
+                    
+                    return {region, score, minDist};
+                });
+                
+                // Find min/max scores for normalization
+                const scores = regionScores.map(r => r.score);
+                const minScore = Math.min(...scores);
+                const maxScore = Math.max(...scores);
+                
+                regionScores.forEach((item, index) => {
+                    const region = item.region;
+                    const score = item.score;
+                    const normalizedScore = (score - minScore) / (maxScore - minScore || 1);
+                    
                     const centerX = xScale(region.x);
                     const centerZ = yScale(region.y);
+                    
+                    // Color-code by opportunity score: green (low) -> yellow -> red (high)
+                    let boxColor;
+                    if (normalizedScore < 0.33) {
+                        boxColor = new THREE.Color(0x10b981); // green
+                    } else if (normalizedScore < 0.66) {
+                        boxColor = new THREE.Color(0xfbbf24); // yellow
+                    } else {
+                        boxColor = new THREE.Color(0xef4444); // red
+                    }
                     
                     // Create filled box with glow
                     const boxGeometry = new THREE.BoxGeometry(gridSize * 2, scaleZ * 0.8, gridSize * 2);
                     
-                    // Filled box
+                    // Filled box with opportunity-based color
                     const boxMaterial = new THREE.MeshBasicMaterial({
-                        color: 0x3b82f6,
+                        color: boxColor,
                         transparent: true,
-                        opacity: 0.08,
+                        opacity: 0.12 + normalizedScore * 0.08, // Higher score = more visible
                         side: THREE.DoubleSide
                     });
                     
                     const box = new THREE.Mesh(boxGeometry, boxMaterial);
                     box.position.set(centerX, 0, centerZ);
+                    box.userData = {
+                        type: 'sparseRegion',
+                        score: normalizedScore,
+                        density: region.density,
+                        minDist: item.minDist.toFixed(1)
+                    };
                     scene.add(box);
                     sparseBoxes.push(box);
                     
-                    // Wireframe outline
+                    // Wireframe outline (same color as box)
                     const edges = new THREE.EdgesGeometry(boxGeometry);
                     const lineMaterial = new THREE.LineBasicMaterial({
-                        color: 0x60a5fa,
+                        color: boxColor,
                         transparent: true,
-                        opacity: 0.4,
+                        opacity: 0.5,
                         linewidth: 2
                     });
                     const wireframe = new THREE.LineSegments(edges, lineMaterial);
