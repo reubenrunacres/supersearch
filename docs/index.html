@@ -506,7 +506,7 @@
 
         <div id="loading">
             <div class="loading-spinner"></div>
-            <div class="loading-text">Loading 21,263 materials...</div>
+            <div class="loading-text" id="loading-text">Loading data...</div>
         </div>
 
         <div id="tooltip"></div>
@@ -532,6 +532,29 @@
     </div>
 
     <script>
+        // Check WebGL support
+        function checkWebGLSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGLRenderingContext && 
+                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            } catch(e) {
+                return false;
+            }
+        }
+
+        if (!checkWebGLSupport()) {
+            document.getElementById('loading').innerHTML = 
+                '<div class="loading-text" style="color: #ef4444;">WebGL not supported on this device</div>';
+            throw new Error('WebGL not supported');
+        }
+
+        // Loading timeout (20 seconds)
+        const loadingTimeout = setTimeout(() => {
+            document.getElementById('loading').innerHTML = 
+                '<div class="loading-text" style="color: #ef4444;">Loading timeout - please refresh</div>';
+        }, 20000);
+
         // Scene setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0e1a);
@@ -546,19 +569,25 @@
         );
         camera.position.set(80, 60, 80);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: window.devicePixelRatio < 2, // Disable AA on high-DPI mobile
+            alpha: true,
+            powerPreference: 'high-performance'
+        });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // Aggressive pixel ratio reduction on mobile for performance
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Post-processing with bloom
+        // Post-processing with bloom (reduced on mobile)
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomPass = new THREE.UnrealBloomPass(
             new THREE.Vector2(container.clientWidth, container.clientHeight),
-            0.8,  // strength
+            isMobile ? 0.5 : 0.8,  // strength (reduced on mobile)
             0.4,  // radius
             0.85  // threshold
         );
@@ -626,16 +655,26 @@
         ];
 
         // Load and visualize data
+        document.getElementById('loading-text').textContent = 'Downloading data (3.1MB)...';
+        
         fetch('data/analysis_results.json')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                document.getElementById('loading-text').textContent = 'Parsing materials...';
+                return response.json();
+            })
             .then(data => {
+                clearTimeout(loadingTimeout);
+                document.getElementById('loading-text').textContent = 'Creating visualization...';
                 materials = data.materials;
                 createVisualization(data);
                 document.getElementById('loading').style.display = 'none';
             })
             .catch(error => {
+                clearTimeout(loadingTimeout);
                 console.error('Error loading data:', error);
-                document.getElementById('loading').innerHTML = '<div class="loading-text" style="color: #ef4444;">Error loading data</div>';
+                document.getElementById('loading').innerHTML = 
+                    '<div class="loading-text" style="color: #ef4444;">Error: ' + error.message + '<br><small>Try refreshing the page</small></div>';
             });
 
         function createVisualization(data) {
