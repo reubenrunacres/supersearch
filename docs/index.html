@@ -438,6 +438,19 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
+        // Post-processing with bloom
+        const composer = new THREE.EffectComposer(renderer);
+        const renderPass = new THREE.RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(container.clientWidth, container.clientHeight),
+            0.8,  // strength
+            0.4,  // radius
+            0.85  // threshold
+        );
+        composer.addPass(bloomPass);
+
         // Orbit controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -767,7 +780,7 @@
                 }
             });
 
-            renderer.render(scene, camera);
+            composer.render();
         }
 
         animate();
@@ -777,6 +790,7 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
+            composer.setSize(container.clientWidth, container.clientHeight);
         });
 
         // Keyboard shortcuts
