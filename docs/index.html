@@ -3,115 +3,1212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperSearch</title>
+    <title>SuperSearch - Superconductor Composition Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/ConvexGeometry.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; }
-        body { background: #0a0e1a; color: #fff; font-family: monospace; overflow: hidden; }
-        #info { position: absolute; top: 20px; left: 20px; z-index: 100; }
-        #canvas { width: 100vw; height: 100vh; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0a0e1a;
+            color: #e8e8e8;
+            line-height: 1.65;
+            font-size: 16px;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        #header {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            pointer-events: auto;
+        }
+
+        h1 {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: #888;
+            font-family: 'Fragment Mono', monospace;
+        }
+
+        #controls {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            min-width: 240px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        #stats {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            line-height: 2;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(20, 24, 35, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .section-title {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .legend-item:hover {
+            transform: translateX(4px);
+        }
+
+        .legend-item.dimmed {
+            opacity: 0.3;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .legend-item:hover .legend-color {
+            transform: scale(1.2);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .legend-label {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            color: #e8e8e8;
+        }
+
+        .legend-count {
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: auto;
+            padding-left: 12px;
+        }
+
+        .tc-gradient {
+            width: 100%;
+            height: 24px;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 6px;
+            margin: 12px 0 8px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tc-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        button {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        button.active {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .button-group button {
+            font-size: 0.75rem;
+            padding: 8px 12px;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-family: 'Fragment Mono', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.8;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .tooltip-title {
+            font-size: 0.9375rem;
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .tooltip-label {
+            color: #888;
+        }
+
+        .tooltip-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.75rem;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .instruction-row {
+            margin-bottom: 4px;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Fragment Mono', monospace;
+            color: #888;
+            font-size: 0.875rem;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            #header {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: calc(100vw - 20px);
+            }
+
+            h1 {
+                font-size: 1.125rem;
+            }
+
+            .subtitle {
+                font-size: 0.75rem;
+            }
+
+            #controls {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                padding: 16px;
+                min-width: auto;
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
+            #stats {
+                display: none; /* Hide on mobile to reduce clutter */
+            }
+
+            #legend {
+                top: 80px;
+                right: 10px;
+                bottom: auto;
+                left: auto;
+                padding: 12px;
+                font-size: 0.75rem;
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 0.875rem;
+                touch-action: manipulation;
+            }
+
+            .button-group button {
+                font-size: 0.75rem;
+                padding: 10px 12px;
+            }
+
+            #tooltip {
+                font-size: 0.75rem;
+                padding: 12px 16px;
+                max-width: 80vw;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+
+            .control-section {
+                margin-bottom: 16px;
+            }
+
+            .instructions {
+                display: none; /* Hide instructions on mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1rem;
+            }
+
+            .subtitle {
+                font-size: 0.6875rem;
+            }
+
+            #controls {
+                padding: 12px;
+                font-size: 0.75rem;
+            }
+
+            #legend {
+                padding: 10px;
+                font-size: 0.6875rem;
+            }
+
+            button {
+                padding: 10px 14px;
+                font-size: 0.8125rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="info">SuperSearch - Loading...</div>
-    <div id="canvas"></div>
-    <script>
-        const info = document.getElementById('info');
-        const container = document.getElementById('canvas');
+    <div id="container">
+        <div id="canvas-container"></div>
         
-        // Scene
+        <div id="ui-overlay">
+            <div id="header">
+                <h1>SuperSearch</h1>
+                <div class="subtitle">21,263 superconductors mapped in 3D composition space</div>
+            </div>
+
+            <div id="controls">
+                <div class="control-group">
+                    <div class="control-label">Camera Presets</div>
+                    <div class="button-group">
+                        <button onclick="setView('overview')">Overview</button>
+                        <button onclick="setView('families')">Families</button>
+                        <button onclick="setView('sparse')">Sparse</button>
+                        <button onclick="setView('highTc')">High-Tc</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">View Mode</div>
+                    <button id="rotate-btn" class="active" onclick="toggleRotation()">Auto-Rotate</button>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="resetCamera()">Reset View</button>
+                </div>
+                
+                <div class="instructions">
+                    <div class="instruction-row">🖱️ Drag to rotate</div>
+                    <div class="instruction-row">🔍 Scroll to zoom</div>
+                    <div class="instruction-row">⇧ Right-drag to pan</div>
+                    <div class="instruction-row">💡 Hover for details</div>
+                    <div class="instruction-row">👆 Click legend to filter</div>
+                </div>
+            </div>
+
+            <div id="stats">
+                <div><span class="stat-label">Materials:</span> <span class="stat-value">21,263</span></div>
+                <div><span class="stat-label">Families:</span> <span class="stat-value">3</span></div>
+                <div><span class="stat-label">Sparse Regions:</span> <span class="stat-value">34</span></div>
+                <div><span class="stat-label">Tc Range:</span> <span class="stat-value">0-185K</span></div>
+                <div><span class="stat-label">Variance:</span> <span class="stat-value">73.5%</span></div>
+            </div>
+
+            <div id="legend">
+                <div class="section-title">Composition Families</div>
+                <div class="legend-item" onclick="toggleCluster(0)">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <div class="legend-label">Family A</div>
+                    <div class="legend-count" id="count-0">0</div>
+                </div>
+                <div class="legend-item" onclick="toggleCluster(1)">
+                    <div class="legend-color" style="background: #8b5cf6;"></div>
+                    <div class="legend-label">Family B</div>
+                    <div class="legend-count" id="count-1">0</div>
+                </div>
+                <div class="legend-item" onclick="toggleCluster(2)">
+                    <div class="legend-color" style="background: #ec4899;"></div>
+                    <div class="legend-label">Family C</div>
+                    <div class="legend-count" id="count-2">0</div>
+                </div>
+                
+                <div class="section-title" style="margin-top: 24px;">Critical Temperature</div>
+                <div class="tc-gradient"></div>
+                <div class="tc-labels">
+                    <span>0K</span>
+                    <span>93K</span>
+                    <span>185K</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading 21,263 materials...</div>
+        </div>
+
+        <div id="tooltip"></div>
+
+        <!-- Guided Tour Overlay -->
+        <div id="tour-overlay" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 14, 26, 0.98); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 40px; border-radius: 16px; max-width: 600px; z-index: 2000; text-align: center; box-shadow: 0 16px 64px rgba(0, 0, 0, 0.8);">
+            <div id="tour-content">
+                <h2 style="font-family: 'Fragment Mono', monospace; font-size: 1.5rem; margin-bottom: 16px; color: #fff;">Welcome to SuperSearch</h2>
+                <p style="margin-bottom: 24px; line-height: 1.8; color: #ccc;"></p>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+                <button onclick="skipTour()" style="flex: 1; max-width: 140px;">Skip</button>
+                <button onclick="nextTourStep()" class="active" style="flex: 1; max-width: 140px;">Next</button>
+            </div>
+            <div id="tour-progress" style="margin-top: 20px; font-size: 0.75rem; color: #666;"></div>
+        </div>
+
+        <!-- Insights Panel -->
+        <div id="insights" style="position: absolute; top: 120px; left: 40px; background: rgba(20, 24, 35, 0.85); backdrop-filter: blur(20px); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: auto; max-width: 320px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
+            <div class="section-title" style="margin-bottom: 16px;">Key Discoveries</div>
+            <div id="insights-content" style="font-family: 'Fragment Mono', monospace; font-size: 0.8125rem; line-height: 1.8;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Scene setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0e1a);
-        
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.fog = new THREE.FogExp2(0x0a0e1a, 0.002);
+
+        const container = document.getElementById('canvas-container');
+        const camera = new THREE.PerspectiveCamera(
+            50,
+            container.clientWidth / container.clientHeight,
+            0.1,
+            1000
+        );
         camera.position.set(80, 60, 80);
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
-        
-        // Controls
+
+        // Post-processing with bloom
+        const composer = new THREE.EffectComposer(renderer);
+        const renderPass = new THREE.RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(container.clientWidth, container.clientHeight),
+            0.8,  // strength
+            0.4,  // radius
+            0.85  // threshold
+        );
+        composer.addPass(bloomPass);
+
+        // Orbit controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 30;
+        controls.maxDistance = 200;
+        controls.maxPolarAngle = Math.PI * 0.95;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.5;
-        
-        // Light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        controls.autoRotateSpeed = 0.3;
+
+        // Enhanced Lighting Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0x3b82f6, 2, 300);
-        pointLight.position.set(60, 60, 60);
-        scene.add(pointLight);
-        
-        // Load data
+
+        // Main point lights with increased intensity
+        const pointLight1 = new THREE.PointLight(0x3b82f6, 3.5, 400);
+        pointLight1.position.set(60, 60, 60);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xec4899, 2.5, 400);
+        pointLight2.position.set(-60, -40, -60);
+        scene.add(pointLight2);
+
+        const pointLight3 = new THREE.PointLight(0x8b5cf6, 2, 300);
+        pointLight3.position.set(0, 80, 0);
+        scene.add(pointLight3);
+
+        // Rim light for dramatic effect
+        const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.2);
+        rimLight.position.set(-50, 50, -50);
+        scene.add(rimLight);
+
+        // Top spotlight for depth
+        const spotLight = new THREE.SpotLight(0xffffff, 0.8, 300, Math.PI / 6, 0.5, 1);
+        spotLight.position.set(0, 100, 0);
+        spotLight.target.position.set(0, 0, 0);
+        scene.add(spotLight);
+        scene.add(spotLight.target);
+
+        // Grid and axes
+        const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
+        gridHelper.position.y = -40;
+        scene.add(gridHelper);
+
+        const axesHelper = new THREE.AxesHelper(50);
+        scene.add(axesHelper);
+
+        // Data structures
+        let pointsMesh;
+        let sparseBoxes = [];
+        let materials = [];
+        let clusterVisibility = [true, true, true];
+        let autoRotate = true;
+
+        // Cluster colors
+        const clusterColors = [
+            new THREE.Color(0x3b82f6), // Blue
+            new THREE.Color(0x8b5cf6), // Purple
+            new THREE.Color(0xec4899)  // Pink
+        ];
+
+        // Load and visualize data
         fetch('data/analysis_results_fast.json')
-            .then(r => r.json())
+            .then(response => response.json())
             .then(data => {
-                info.textContent = `SuperSearch - ${data.materials.length.toLocaleString()} materials`;
-                
-                // Create points
-                const geometry = new THREE.BufferGeometry();
-                const positions = [];
-                const colors = [];
-                
-                // Simple scaling
-                const xVals = data.materials.map(m => m.x);
-                const yVals = data.materials.map(m => m.y);
-                const tcVals = data.materials.map(m => m.tc);
-                
-                const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
-                const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
-                const tcMin = Math.min(...tcVals), tcMax = Math.max(...tcVals);
-                
-                data.materials.forEach(m => {
-                    const x = ((m.x - xMin) / (xMax - xMin) - 0.5) * 60;
-                    const y = ((m.tc - tcMin) / (tcMax - tcMin) - 0.5) * 60;
-                    const z = ((m.y - yMin) / (yMax - yMin) - 0.5) * 60;
-                    
-                    positions.push(x, y, z);
-                    
-                    // Color by Tc
-                    const t = (m.tc - tcMin) / (tcMax - tcMin);
-                    const r = 0.2 + t * 0.8;
-                    const g = 0.3;
-                    const b = 0.9 - t * 0.5;
-                    colors.push(r, g, b);
-                });
-                
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-                
-                const material = new THREE.PointsMaterial({
-                    size: 0.8,
-                    vertexColors: true
-                });
-                
-                const points = new THREE.Points(geometry, material);
-                scene.add(points);
-                
-                console.log('✓ Rendered', data.materials.length, 'materials');
+                materials = data.materials;
+                createVisualization(data);
+                document.getElementById('loading').style.display = 'none';
             })
-            .catch(e => {
-                info.textContent = 'Error: ' + e.message;
-                console.error(e);
+            .catch(error => {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = '<div class="loading-text" style="color: #ef4444;">Error loading data</div>';
             });
-        
-        // Animate
+
+        function createVisualization(data) {
+            // Calculate data extents
+            const xExtent = [Math.min(...data.materials.map(m => m.x)), Math.max(...data.materials.map(m => m.x))];
+            const yExtent = [Math.min(...data.materials.map(m => m.y)), Math.max(...data.materials.map(m => m.y))];
+            const tcExtent = [data.metadata.tc_range.min, data.metadata.tc_range.max];
+            
+            // Better scaling - spread across full 3D space
+            const scaleX = 60;
+            const scaleY = 60;
+            const scaleZ = 60;
+            
+            const xScale = (x) => ((x - xExtent[0]) / (xExtent[1] - xExtent[0]) - 0.5) * scaleX;
+            const yScale = (y) => ((y - yExtent[0]) / (yExtent[1] - yExtent[0]) - 0.5) * scaleY;
+            const zScale = (tc) => ((tc - tcExtent[0]) / (tcExtent[1] - tcExtent[0]) - 0.5) * scaleZ;
+
+            // Create sprite texture for points (better than plain dots)
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 32, 32);
+            const sprite = new THREE.CanvasTexture(canvas);
+
+            // Create points geometry
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+
+            // Count by cluster
+            const clusterCounts = [0, 0, 0];
+
+            data.materials.forEach(material => {
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
+                
+                positions.push(x, y, z);
+                
+                // Use cluster color
+                const color = clusterColors[material.cluster];
+                colors.push(color.r, color.g, color.b);
+                
+                // Vary size by Tc (higher Tc = bigger)
+                const size = 0.5 + (material.tc / tcExtent[1]) * 1.5;
+                sizes.push(size);
+                
+                clusterCounts[material.cluster]++;
+            });
+
+            // Update counts in legend
+            document.getElementById('count-0').textContent = clusterCounts[0].toLocaleString();
+            document.getElementById('count-1').textContent = clusterCounts[1].toLocaleString();
+            document.getElementById('count-2').textContent = clusterCounts[2].toLocaleString();
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85,
+                sizeAttenuation: true,
+                map: sprite,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            pointsMesh = new THREE.Points(geometry, material);
+            scene.add(pointsMesh);
+
+            // Create composition family bounding volumes
+            const clusterBounds = [{}, {}, {}];
+            data.materials.forEach(material => {
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
+                const cluster = material.cluster;
+                
+                if (!clusterBounds[cluster].minX) {
+                    clusterBounds[cluster] = {minX: x, maxX: x, minY: y, maxY: y, minZ: z, maxZ: z};
+                } else {
+                    clusterBounds[cluster].minX = Math.min(clusterBounds[cluster].minX, x);
+                    clusterBounds[cluster].maxX = Math.max(clusterBounds[cluster].maxX, x);
+                    clusterBounds[cluster].minY = Math.min(clusterBounds[cluster].minY, y);
+                    clusterBounds[cluster].maxY = Math.max(clusterBounds[cluster].maxY, y);
+                    clusterBounds[cluster].minZ = Math.min(clusterBounds[cluster].minZ, z);
+                    clusterBounds[cluster].maxZ = Math.max(clusterBounds[cluster].maxZ, z);
+                }
+            });
+
+            // Create convex hulls for each cluster
+            const clusterPoints = [[], [], []];
+            data.materials.forEach(material => {
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
+                clusterPoints[material.cluster].push(new THREE.Vector3(x, y, z));
+            });
+
+            clusterPoints.forEach((points, i) => {
+                if (points.length < 4) return; // Need at least 4 points for convex hull
+                
+                try {
+                    // Create convex hull geometry
+                    const hullGeometry = new THREE.ConvexGeometry(points);
+                    
+                    // Filled hull with breathing animation
+                    const hullMaterial = new THREE.MeshPhongMaterial({
+                        color: clusterColors[i],
+                        transparent: true,
+                        opacity: 0.15,
+                        side: THREE.DoubleSide,
+                        depthWrite: false,
+                        shininess: 30
+                    });
+                    const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                    hull.userData = {
+                        type: 'convexHull', 
+                        cluster: i,
+                        baseOpacity: 0.15,
+                        phase: Math.random() * Math.PI * 2 // Random phase for animation
+                    };
+                    scene.add(hull);
+                    
+                    // Wireframe edges for hull
+                    const edges = new THREE.EdgesGeometry(hullGeometry);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: clusterColors[i],
+                        transparent: true,
+                        opacity: 0.4,
+                        linewidth: 2
+                    });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    wireframe.userData = {type: 'convexHull', cluster: i};
+                    scene.add(wireframe);
+                } catch (e) {
+                    console.warn(`Could not create convex hull for cluster ${i}:`, e);
+                }
+            });
+
+            // Create sparse region boxes with opportunity ranking
+            if (data.sparse_regions) {
+                const gridSize = 1.5; // Approximate grid cell size
+                
+                // Calculate opportunity scores for each region
+                const regionScores = data.sparse_regions.map(region => {
+                    const rx = xScale(region.x);
+                    const rz = yScale(region.y);
+                    
+                    // Find nearest high-Tc material (Tc > 100K)
+                    let minDist = Infinity;
+                    data.materials.forEach(m => {
+                        if (m.tc > 100) {
+                            const mx = xScale(m.x);
+                            const mz = yScale(m.y);
+                            const dist = Math.sqrt((rx - mx) ** 2 + (rz - mz) ** 2);
+                            minDist = Math.min(minDist, dist);
+                        }
+                    });
+                    
+                    // Opportunity score: inverse distance (closer = higher score)
+                    const proximityScore = 1 / (minDist + 1);
+                    
+                    // Density score: regions with density=1 or 2 are highest opportunity
+                    const densityScore = region.density <= 2 ? 1.0 : 0.5;
+                    
+                    // Composite score (weighted)
+                    const score = proximityScore * 0.6 + densityScore * 0.4;
+                    
+                    return {region, score, minDist};
+                });
+                
+                // Find min/max scores for normalization
+                const scores = regionScores.map(r => r.score);
+                const minScore = Math.min(...scores);
+                const maxScore = Math.max(...scores);
+                
+                regionScores.forEach((item, index) => {
+                    const region = item.region;
+                    const score = item.score;
+                    const normalizedScore = (score - minScore) / (maxScore - minScore || 1);
+                    
+                    const centerX = xScale(region.x);
+                    const centerZ = yScale(region.y);
+                    
+                    // Color-code by opportunity score: green (low) -> yellow -> red (high)
+                    let boxColor;
+                    if (normalizedScore < 0.33) {
+                        boxColor = new THREE.Color(0x10b981); // green
+                    } else if (normalizedScore < 0.66) {
+                        boxColor = new THREE.Color(0xfbbf24); // yellow
+                    } else {
+                        boxColor = new THREE.Color(0xef4444); // red
+                    }
+                    
+                    // Create filled box with glow
+                    const boxGeometry = new THREE.BoxGeometry(gridSize * 2, scaleZ * 0.8, gridSize * 2);
+                    
+                    // Filled box with opportunity-based color
+                    const boxMaterial = new THREE.MeshBasicMaterial({
+                        color: boxColor,
+                        transparent: true,
+                        opacity: 0.12 + normalizedScore * 0.08, // Higher score = more visible
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                    box.position.set(centerX, 0, centerZ);
+                    box.userData = {
+                        type: 'sparseRegion',
+                        score: normalizedScore,
+                        density: region.density,
+                        minDist: item.minDist.toFixed(1)
+                    };
+                    scene.add(box);
+                    sparseBoxes.push(box);
+                    
+                    // Wireframe outline (same color as box)
+                    const edges = new THREE.EdgesGeometry(boxGeometry);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: boxColor,
+                        transparent: true,
+                        opacity: 0.5,
+                        linewidth: 2
+                    });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    wireframe.position.copy(box.position);
+                    scene.add(wireframe);
+                    sparseBoxes.push(wireframe);
+                });
+            }
+        }
+
+        // Camera presets
+        function setView(preset) {
+            controls.autoRotate = false;
+            autoRotate = false;
+            document.getElementById('rotate-btn').classList.remove('active');
+            
+            const duration = 1000;
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            let endPos, endTarget;
+            
+            switch(preset) {
+                case 'overview':
+                    endPos = new THREE.Vector3(80, 60, 80);
+                    endTarget = new THREE.Vector3(0, 0, 0);
+                    break;
+                case 'families':
+                    endPos = new THREE.Vector3(0, 100, 0);
+                    endTarget = new THREE.Vector3(0, 0, 0);
+                    break;
+                case 'sparse':
+                    endPos = new THREE.Vector3(50, 30, 50);
+                    endTarget = new THREE.Vector3(0, -10, 0);
+                    break;
+                case 'highTc':
+                    endPos = new THREE.Vector3(40, 50, 40);
+                    endTarget = new THREE.Vector3(0, 20, 0);
+                    break;
+            }
+            
+            const startTime = Date.now();
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+                
+                camera.position.lerpVectors(startPos, endPos, eased);
+                controls.target.lerpVectors(startTarget, endTarget, eased);
+                controls.update();
+                
+                if (t < 1) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function resetCamera() {
+            setView('overview');
+        }
+
+        function toggleRotation() {
+            autoRotate = !autoRotate;
+            controls.autoRotate = autoRotate;
+            document.getElementById('rotate-btn').classList.toggle('active');
+        }
+
+        function toggleCluster(cluster) {
+            clusterVisibility[cluster] = !clusterVisibility[cluster];
+            
+            // Update legend item appearance
+            const items = document.querySelectorAll('.legend-item');
+            items[cluster].classList.toggle('dimmed');
+            
+            // Update point visibility
+            if (pointsMesh) {
+                const colors = pointsMesh.geometry.attributes.color.array;
+                const originalColors = materials.map(m => clusterColors[m.cluster]);
+                
+                materials.forEach((material, i) => {
+                    if (material.cluster === cluster) {
+                        const alpha = clusterVisibility[cluster] ? 1 : 0.05;
+                        const color = originalColors[i];
+                        colors[i * 3] = color.r * alpha;
+                        colors[i * 3 + 1] = color.g * alpha;
+                        colors[i * 3 + 2] = color.b * alpha;
+                    }
+                });
+                
+                pointsMesh.geometry.attributes.color.needsUpdate = true;
+            }
+        }
+
+        // Raycasting for hover tooltips
+        const raycaster = new THREE.Raycaster();
+        raycaster.params.Points.threshold = 1;
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+        let lastHoveredIndex = -1;
+
+        renderer.domElement.addEventListener('mousemove', (event) => {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        });
+
+        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
+            
             controls.update();
-            renderer.render(scene, camera);
+
+            // Raycasting for tooltips
+            if (pointsMesh) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(pointsMesh);
+                
+                if (intersects.length > 0) {
+                    const index = intersects[0].index;
+                    
+                    if (index !== lastHoveredIndex && materials[index]) {
+                        const material = materials[index];
+                        const clusterNames = ['Family A', 'Family B', 'Family C'];
+                        
+                        tooltip.innerHTML = `
+                            <div class="tooltip-title">${material.material || 'Superconductor ' + index}</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Critical Temp:</span>
+                                <span class="tooltip-value">${material.tc.toFixed(1)}K</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Cluster:</span>
+                                <span class="tooltip-value">${clusterNames[material.cluster]}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Atomic Mass:</span>
+                                <span class="tooltip-value">${material.atomic_mass.toFixed(1)}</span>
+                            </div>
+                        `;
+                        
+                        const rect = container.getBoundingClientRect();
+                        const x = (mouse.x + 1) * rect.width / 2 + 15;
+                        const y = (-mouse.y + 1) * rect.height / 2 + 15;
+                        
+                        tooltip.style.opacity = '1';
+                        tooltip.style.left = x + 'px';
+                        tooltip.style.top = y + 'px';
+                        lastHoveredIndex = index;
+                    }
+                } else {
+                    tooltip.style.opacity = '0';
+                    lastHoveredIndex = -1;
+                }
+            }
+
+            // Animate sparse boxes (subtle pulse)
+            sparseBoxes.forEach((box, i) => {
+                if (i % 2 === 0) { // Only filled boxes
+                    box.material.opacity = 0.08 + Math.sin(Date.now() * 0.001 + i) * 0.02;
+                }
+            });
+
+            // Animate convex hulls (breathing effect)
+            scene.children.forEach(child => {
+                if (child.userData.type === 'convexHull' && child.userData.baseOpacity !== undefined) {
+                    const time = Date.now() * 0.0008;
+                    const pulse = Math.sin(time + child.userData.phase) * 0.05;
+                    child.material.opacity = child.userData.baseOpacity + pulse;
+                }
+            });
+
+            composer.render();
         }
+
         animate();
-        
-        // Resize
+
+        // Handle window resize
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            composer.setSize(container.clientWidth, container.clientHeight);
         });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1': setView('overview'); break;
+                case '2': setView('families'); break;
+                case '3': setView('sparse'); break;
+                case '4': setView('highTc'); break;
+                case 'r': resetCamera(); break;
+                case ' ': toggleRotation(); break;
+                case 't': startTour(); break;
+                case 'i': toggleInsights(); break;
+            }
+        });
+
+        // Guided Tour System
+        let tourStep = 0;
+        const tourSteps = [
+            {
+                title: "Welcome to SuperSearch",
+                content: "This 3D visualization maps 21,263 superconducting materials by their composition and critical temperature. Each point represents a unique material.",
+                view: "overview"
+            },
+            {
+                title: "Composition Families",
+                content: "Materials cluster into three distinct families (blue, purple, pink) based on their chemical composition similarities. Each family has unique properties.",
+                view: "families"
+            },
+            {
+                title: "Critical Temperature",
+                content: "Height represents critical temperature (Tc) — the temperature below which a material becomes superconducting. Higher points mean higher Tc (better superconductors).",
+                view: "highTc"
+            },
+            {
+                title: "Discovery Opportunities",
+                content: "Red and yellow boxes mark sparse regions — unexplored composition spaces near high-Tc materials. These are prime targets for discovery.",
+                view: "sparse"
+            },
+            {
+                title: "Explore",
+                content: "Use your mouse to rotate, zoom, and explore. Hover over points for details. Press 'T' anytime to restart this tour.",
+                view: "overview"
+            }
+        ];
+
+        function startTour() {
+            tourStep = 0;
+            showTourStep();
+        }
+
+        function nextTourStep() {
+            tourStep++;
+            if (tourStep >= tourSteps.length) {
+                endTour();
+            } else {
+                showTourStep();
+            }
+        }
+
+        function skipTour() {
+            endTour();
+        }
+
+        function endTour() {
+            document.getElementById('tour-overlay').style.display = 'none';
+        }
+
+        function showTourStep() {
+            const step = tourSteps[tourStep];
+            const overlay = document.getElementById('tour-overlay');
+            overlay.style.display = 'block';
+            
+            const content = document.getElementById('tour-content');
+            content.querySelector('h2').textContent = step.title;
+            content.querySelector('p').textContent = step.content;
+            
+            document.getElementById('tour-progress').textContent = `Step ${tourStep + 1} of ${tourSteps.length}`;
+            
+            // Animate to view
+            if (step.view) {
+                setView(step.view);
+            }
+        }
+
+        // Insights Panel
+        function toggleInsights() {
+            const panel = document.getElementById('insights');
+            if (panel.style.display === 'none') {
+                showInsights();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function showInsights() {
+            const panel = document.getElementById('insights');
+            const content = document.getElementById('insights-content');
+            
+            if (materials.length === 0) return;
+            
+            // Find highest Tc materials
+            const sortedByTc = [...materials].sort((a, b) => b.tc - a.tc);
+            const topMaterials = sortedByTc.slice(0, 3);
+            
+            // Calculate cluster stats
+            const clusterCounts = [0, 0, 0];
+            const clusterAvgTc = [0, 0, 0];
+            materials.forEach(m => {
+                clusterCounts[m.cluster]++;
+                clusterAvgTc[m.cluster] += m.tc;
+            });
+            clusterAvgTc.forEach((sum, i) => {
+                clusterAvgTc[i] = (sum / clusterCounts[i]).toFixed(1);
+            });
+            
+            const clusterNames = ['Family A', 'Family B', 'Family C'];
+            
+            let html = '<div style="margin-bottom: 16px;">';
+            html += '<div style="color: #888; font-size: 0.75rem; margin-bottom: 8px;">HIGHEST Tc MATERIALS</div>';
+            topMaterials.forEach((m, i) => {
+                html += `<div style="margin-bottom: 6px; color: #60a5fa;">
+                    ${i + 1}. ${m.tc.toFixed(1)}K — ${clusterNames[m.cluster]}
+                </div>`;
+            });
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">';
+            html += '<div style="color: #888; font-size: 0.75rem; margin-bottom: 8px;">CLUSTER STATISTICS</div>';
+            clusterNames.forEach((name, i) => {
+                html += `<div style="margin-bottom: 6px;">
+                    <span style="color: #888;">${name}:</span> 
+                    <span style="color: #60a5fa;">${clusterCounts[i]} materials</span>
+                    <span style="color: #666;"> (avg ${clusterAvgTc[i]}K)</span>
+                </div>`;
+            });
+            html += '</div>';
+            
+            html += '<div style="padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">';
+            html += '<div style="color: #ef4444; font-size: 0.75rem; margin-bottom: 4px;">⚠ UNEXPLORED REGIONS</div>';
+            html += '<div style="color: #888; font-size: 0.75rem;">High-potential composition spaces with minimal exploration</div>';
+            html += '</div>';
+            
+            content.innerHTML = html;
+            panel.style.display = 'block';
+        }
+
+        // Add tour button to controls
+        const controlsDiv = document.getElementById('controls');
+        const tourButton = document.createElement('button');
+        tourButton.textContent = 'Start Tour';
+        tourButton.onclick = startTour;
+        tourButton.style.marginTop = '16px';
+        controlsDiv.appendChild(tourButton);
+
+        const insightsButton = document.createElement('button');
+        insightsButton.textContent = 'Show Insights';
+        insightsButton.onclick = toggleInsights;
+        insightsButton.style.marginTop = '8px';
+        controlsDiv.appendChild(insightsButton);
     </script>
 </body>
 </html>
