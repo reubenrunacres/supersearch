@@ -666,17 +666,22 @@
         // Post-processing with bloom (DISABLED on mobile for performance)
         let composer;
         if (!isMobile) {
-            composer = new THREE.EffectComposer(renderer);
-            const renderPass = new THREE.RenderPass(scene, camera);
-            composer.addPass(renderPass);
+            try {
+                composer = new THREE.EffectComposer(renderer);
+                const renderPass = new THREE.RenderPass(scene, camera);
+                composer.addPass(renderPass);
 
-            const bloomPass = new THREE.UnrealBloomPass(
-                new THREE.Vector2(container.clientWidth, container.clientHeight),
-                0.8,  // strength
-                0.4,  // radius
-                0.85  // threshold
-            );
-            composer.addPass(bloomPass);
+                const bloomPass = new THREE.UnrealBloomPass(
+                    new THREE.Vector2(container.clientWidth, container.clientHeight),
+                    0.8,  // strength
+                    0.4,  // radius
+                    0.85  // threshold
+                );
+                composer.addPass(bloomPass);
+            } catch (e) {
+                console.warn('Post-processing unavailable, using direct rendering:', e.message);
+                composer = null;
+            }
         }
 
         // Orbit controls (mobile-optimized)
