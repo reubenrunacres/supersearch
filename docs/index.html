@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/ConvexGeometry.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -327,10 +328,103 @@
             font-size: 0.875rem;
         }
 
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            #header, #controls, #stats, #legend {
-                position: relative;
-                margin: 10px;
+            body {
+                font-size: 14px;
+            }
+
+            #header {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: calc(100vw - 20px);
+            }
+
+            h1 {
+                font-size: 1.125rem;
+            }
+
+            .subtitle {
+                font-size: 0.75rem;
+            }
+
+            #controls {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                padding: 16px;
+                min-width: auto;
+                max-height: 40vh;
+                overflow-y: auto;
+            }
+
+            #stats {
+                display: none; /* Hide on mobile to reduce clutter */
+            }
+
+            #legend {
+                top: 80px;
+                right: 10px;
+                bottom: auto;
+                left: auto;
+                padding: 12px;
+                font-size: 0.75rem;
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 0.875rem;
+                touch-action: manipulation;
+            }
+
+            .button-group button {
+                font-size: 0.75rem;
+                padding: 10px 12px;
+            }
+
+            #tooltip {
+                font-size: 0.75rem;
+                padding: 12px 16px;
+                max-width: 80vw;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+
+            .control-section {
+                margin-bottom: 16px;
+            }
+
+            .instructions {
+                display: none; /* Hide instructions on mobile */
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1rem;
+            }
+
+            .subtitle {
+                font-size: 0.6875rem;
+            }
+
+            #controls {
+                padding: 12px;
+                font-size: 0.75rem;
+            }
+
+            #legend {
+                padding: 10px;
+                font-size: 0.6875rem;
+            }
+
+            button {
+                padding: 10px 14px;
+                font-size: 0.8125rem;
             }
         }
     </style>
@@ -416,6 +510,25 @@
         </div>
 
         <div id="tooltip"></div>
+
+        <!-- Guided Tour Overlay -->
+        <div id="tour-overlay" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 14, 26, 0.98); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 40px; border-radius: 16px; max-width: 600px; z-index: 2000; text-align: center; box-shadow: 0 16px 64px rgba(0, 0, 0, 0.8);">
+            <div id="tour-content">
+                <h2 style="font-family: 'Fragment Mono', monospace; font-size: 1.5rem; margin-bottom: 16px; color: #fff;">Welcome to SuperSearch</h2>
+                <p style="margin-bottom: 24px; line-height: 1.8; color: #ccc;"></p>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+                <button onclick="skipTour()" style="flex: 1; max-width: 140px;">Skip</button>
+                <button onclick="nextTourStep()" class="active" style="flex: 1; max-width: 140px;">Next</button>
+            </div>
+            <div id="tour-progress" style="margin-top: 20px; font-size: 0.75rem; color: #666;"></div>
+        </div>
+
+        <!-- Insights Panel -->
+        <div id="insights" style="position: absolute; top: 120px; left: 40px; background: rgba(20, 24, 35, 0.85); backdrop-filter: blur(20px); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: auto; max-width: 320px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
+            <div class="section-title" style="margin-bottom: 16px;">Key Discoveries</div>
+            <div id="insights-content" style="font-family: 'Fragment Mono', monospace; font-size: 0.8125rem; line-height: 1.8;"></div>
+        </div>
     </div>
 
     <script>
@@ -461,21 +574,34 @@
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        // Enhanced Lighting Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
-        const pointLight1 = new THREE.PointLight(0x3b82f6, 2, 300);
+        // Main point lights with increased intensity
+        const pointLight1 = new THREE.PointLight(0x3b82f6, 3.5, 400);
         pointLight1.position.set(60, 60, 60);
         scene.add(pointLight1);
 
-        const pointLight2 = new THREE.PointLight(0xec4899, 1.5, 300);
+        const pointLight2 = new THREE.PointLight(0xec4899, 2.5, 400);
         pointLight2.position.set(-60, -40, -60);
         scene.add(pointLight2);
 
-        const pointLight3 = new THREE.PointLight(0x8b5cf6, 1, 200);
+        const pointLight3 = new THREE.PointLight(0x8b5cf6, 2, 300);
         pointLight3.position.set(0, 80, 0);
         scene.add(pointLight3);
+
+        // Rim light for dramatic effect
+        const rimLight = new THREE.DirectionalLight(0x60a5fa, 1.2);
+        rimLight.position.set(-50, 50, -50);
+        scene.add(rimLight);
+
+        // Top spotlight for depth
+        const spotLight = new THREE.SpotLight(0xffffff, 0.8, 300, Math.PI / 6, 0.5, 1);
+        spotLight.position.set(0, 100, 0);
+        spotLight.target.position.set(0, 0, 0);
+        scene.add(spotLight);
+        scene.add(spotLight.target);
 
         // Grid and axes
         const gridHelper = new THREE.GridHelper(120, 24, 0x2563eb, 0x1a1f2e);
@@ -610,41 +736,54 @@
                 }
             });
 
-            // Create bounding box meshes for each family
-            clusterBounds.forEach((bounds, i) => {
-                const width = bounds.maxX - bounds.minX;
-                const height = bounds.maxY - bounds.minY;
-                const depth = bounds.maxZ - bounds.minZ;
-                const centerX = (bounds.minX + bounds.maxX) / 2;
-                const centerY = (bounds.minY + bounds.maxY) / 2;
-                const centerZ = (bounds.minZ + bounds.maxZ) / 2;
+            // Create convex hulls for each cluster
+            const clusterPoints = [[], [], []];
+            data.materials.forEach(material => {
+                const x = xScale(material.x);
+                const y = zScale(material.tc);
+                const z = yScale(material.y);
+                clusterPoints[material.cluster].push(new THREE.Vector3(x, y, z));
+            });
+
+            clusterPoints.forEach((points, i) => {
+                if (points.length < 4) return; // Need at least 4 points for convex hull
                 
-                // Filled volume
-                const boxGeometry = new THREE.BoxGeometry(width * 1.1, height * 1.1, depth * 1.1);
-                const boxMaterial = new THREE.MeshBasicMaterial({
-                    color: clusterColors[i],
-                    transparent: true,
-                    opacity: 0.12,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-                const box = new THREE.Mesh(boxGeometry, boxMaterial);
-                box.position.set(centerX, centerY, centerZ);
-                box.userData = {type: 'familyBounds', cluster: i};
-                scene.add(box);
-                
-                // Wireframe edges
-                const edges = new THREE.EdgesGeometry(boxGeometry);
-                const lineMaterial = new THREE.LineBasicMaterial({
-                    color: clusterColors[i],
-                    transparent: true,
-                    opacity: 0.25,
-                    linewidth: 1
-                });
-                const wireframe = new THREE.LineSegments(edges, lineMaterial);
-                wireframe.position.copy(box.position);
-                wireframe.userData = {type: 'familyBounds', cluster: i};
-                scene.add(wireframe);
+                try {
+                    // Create convex hull geometry
+                    const hullGeometry = new THREE.ConvexGeometry(points);
+                    
+                    // Filled hull with breathing animation
+                    const hullMaterial = new THREE.MeshPhongMaterial({
+                        color: clusterColors[i],
+                        transparent: true,
+                        opacity: 0.15,
+                        side: THREE.DoubleSide,
+                        depthWrite: false,
+                        shininess: 30
+                    });
+                    const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                    hull.userData = {
+                        type: 'convexHull', 
+                        cluster: i,
+                        baseOpacity: 0.15,
+                        phase: Math.random() * Math.PI * 2 // Random phase for animation
+                    };
+                    scene.add(hull);
+                    
+                    // Wireframe edges for hull
+                    const edges = new THREE.EdgesGeometry(hullGeometry);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: clusterColors[i],
+                        transparent: true,
+                        opacity: 0.4,
+                        linewidth: 2
+                    });
+                    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+                    wireframe.userData = {type: 'convexHull', cluster: i};
+                    scene.add(wireframe);
+                } catch (e) {
+                    console.warn(`Could not create convex hull for cluster ${i}:`, e);
+                }
             });
 
             // Create sparse region boxes with opportunity ranking
@@ -890,6 +1029,15 @@
                 }
             });
 
+            // Animate convex hulls (breathing effect)
+            scene.children.forEach(child => {
+                if (child.userData.type === 'convexHull' && child.userData.baseOpacity !== undefined) {
+                    const time = Date.now() * 0.0008;
+                    const pulse = Math.sin(time + child.userData.phase) * 0.05;
+                    child.material.opacity = child.userData.baseOpacity + pulse;
+                }
+            });
+
             composer.render();
         }
 
@@ -912,8 +1060,155 @@
                 case '4': setView('highTc'); break;
                 case 'r': resetCamera(); break;
                 case ' ': toggleRotation(); break;
+                case 't': startTour(); break;
+                case 'i': toggleInsights(); break;
             }
         });
+
+        // Guided Tour System
+        let tourStep = 0;
+        const tourSteps = [
+            {
+                title: "Welcome to SuperSearch",
+                content: "This 3D visualization maps 21,263 superconducting materials by their composition and critical temperature. Each point represents a unique material.",
+                view: "overview"
+            },
+            {
+                title: "Composition Families",
+                content: "Materials cluster into three distinct families (blue, purple, pink) based on their chemical composition similarities. Each family has unique properties.",
+                view: "families"
+            },
+            {
+                title: "Critical Temperature",
+                content: "Height represents critical temperature (Tc) — the temperature below which a material becomes superconducting. Higher points mean higher Tc (better superconductors).",
+                view: "highTc"
+            },
+            {
+                title: "Discovery Opportunities",
+                content: "Red and yellow boxes mark sparse regions — unexplored composition spaces near high-Tc materials. These are prime targets for discovery.",
+                view: "sparse"
+            },
+            {
+                title: "Explore",
+                content: "Use your mouse to rotate, zoom, and explore. Hover over points for details. Press 'T' anytime to restart this tour.",
+                view: "overview"
+            }
+        ];
+
+        function startTour() {
+            tourStep = 0;
+            showTourStep();
+        }
+
+        function nextTourStep() {
+            tourStep++;
+            if (tourStep >= tourSteps.length) {
+                endTour();
+            } else {
+                showTourStep();
+            }
+        }
+
+        function skipTour() {
+            endTour();
+        }
+
+        function endTour() {
+            document.getElementById('tour-overlay').style.display = 'none';
+        }
+
+        function showTourStep() {
+            const step = tourSteps[tourStep];
+            const overlay = document.getElementById('tour-overlay');
+            overlay.style.display = 'block';
+            
+            const content = document.getElementById('tour-content');
+            content.querySelector('h2').textContent = step.title;
+            content.querySelector('p').textContent = step.content;
+            
+            document.getElementById('tour-progress').textContent = `Step ${tourStep + 1} of ${tourSteps.length}`;
+            
+            // Animate to view
+            if (step.view) {
+                setView(step.view);
+            }
+        }
+
+        // Insights Panel
+        function toggleInsights() {
+            const panel = document.getElementById('insights');
+            if (panel.style.display === 'none') {
+                showInsights();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function showInsights() {
+            const panel = document.getElementById('insights');
+            const content = document.getElementById('insights-content');
+            
+            if (materials.length === 0) return;
+            
+            // Find highest Tc materials
+            const sortedByTc = [...materials].sort((a, b) => b.tc - a.tc);
+            const topMaterials = sortedByTc.slice(0, 3);
+            
+            // Calculate cluster stats
+            const clusterCounts = [0, 0, 0];
+            const clusterAvgTc = [0, 0, 0];
+            materials.forEach(m => {
+                clusterCounts[m.cluster]++;
+                clusterAvgTc[m.cluster] += m.tc;
+            });
+            clusterAvgTc.forEach((sum, i) => {
+                clusterAvgTc[i] = (sum / clusterCounts[i]).toFixed(1);
+            });
+            
+            const clusterNames = ['Family A', 'Family B', 'Family C'];
+            
+            let html = '<div style="margin-bottom: 16px;">';
+            html += '<div style="color: #888; font-size: 0.75rem; margin-bottom: 8px;">HIGHEST Tc MATERIALS</div>';
+            topMaterials.forEach((m, i) => {
+                html += `<div style="margin-bottom: 6px; color: #60a5fa;">
+                    ${i + 1}. ${m.tc.toFixed(1)}K — ${clusterNames[m.cluster]}
+                </div>`;
+            });
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">';
+            html += '<div style="color: #888; font-size: 0.75rem; margin-bottom: 8px;">CLUSTER STATISTICS</div>';
+            clusterNames.forEach((name, i) => {
+                html += `<div style="margin-bottom: 6px;">
+                    <span style="color: #888;">${name}:</span> 
+                    <span style="color: #60a5fa;">${clusterCounts[i]} materials</span>
+                    <span style="color: #666;"> (avg ${clusterAvgTc[i]}K)</span>
+                </div>`;
+            });
+            html += '</div>';
+            
+            html += '<div style="padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">';
+            html += '<div style="color: #ef4444; font-size: 0.75rem; margin-bottom: 4px;">⚠ UNEXPLORED REGIONS</div>';
+            html += '<div style="color: #888; font-size: 0.75rem;">High-potential composition spaces with minimal exploration</div>';
+            html += '</div>';
+            
+            content.innerHTML = html;
+            panel.style.display = 'block';
+        }
+
+        // Add tour button to controls
+        const controlsDiv = document.getElementById('controls');
+        const tourButton = document.createElement('button');
+        tourButton.textContent = 'Start Tour';
+        tourButton.onclick = startTour;
+        tourButton.style.marginTop = '16px';
+        controlsDiv.appendChild(tourButton);
+
+        const insightsButton = document.createElement('button');
+        insightsButton.textContent = 'Show Insights';
+        insightsButton.onclick = toggleInsights;
+        insightsButton.style.marginTop = '8px';
+        controlsDiv.appendChild(insightsButton);
     </script>
 </body>
 </html>
