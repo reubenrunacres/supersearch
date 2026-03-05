@@ -758,7 +758,6 @@
         ];
 
         // Load and visualize data (optimized for <1 second loading)
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const dataFile = isMobile ? 'data/analysis_results_mobile.json' : 'data/analysis_results_fast.json';
         const dataSize = isMobile ? '568KB' : '666KB';
         
