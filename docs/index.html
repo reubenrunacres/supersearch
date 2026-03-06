@@ -201,11 +201,8 @@
         .region-item {
             padding: 8px 0;
             border-bottom: 1px solid rgba(0,0,0,0.04);
-            cursor: pointer;
-            transition: background 0.1s;
         }
         .region-item:last-child { border-bottom: none; }
-        .region-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 8px 14px; }
         .region-rank {
             display: inline-block;
             width: 20px;
@@ -246,11 +243,8 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            cursor: pointer;
-            transition: background 0.1s;
         }
         .material-item:last-child { border-bottom: none; }
-        .material-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 6px 14px; }
         .mat-rank {
             color: #bbb;
             font-size: 10px;
@@ -601,6 +595,8 @@
     controls.dampingFactor = 0.05;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.3;
+    controls.maxPolarAngle = Math.PI / 2; // Prevent rotating below horizontal
+    controls.minPolarAngle = 0; // Allow looking straight down from above
 
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
@@ -610,6 +606,30 @@
     const light2 = new THREE.PointLight(0xffffff, 1.0, 300);
     light2.position.set(-60, -30, -60);
     scene.add(light2);
+
+    // ─── Base Platform ───────────────────────────────────────────────
+    const platformGeometry = new THREE.CylinderGeometry(50, 50, 2, 64);
+    const platformMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe8e6dc, // Slightly darker cream than background
+        metalness: 0.0,
+        roughness: 0.8,
+        flatShading: false
+    });
+    const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+    platform.position.y = -36; // Position below point cloud
+    scene.add(platform);
+
+    // Platform edge ring for definition
+    const edgeGeometry = new THREE.TorusGeometry(50, 0.3, 16, 64);
+    const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xd4d2c8, // Subtle darker edge
+        metalness: 0.0,
+        roughness: 0.9
+    });
+    const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    edge.position.y = -35;
+    edge.rotation.x = Math.PI / 2;
+    scene.add(edge);
 
     // ─── Color Functions ─────────────────────────────────────────────
     const clusterColors = [
@@ -780,7 +800,7 @@
                 ? `Lowest density zone — highest synthesis priority`
                 : `Adjacent to materials with Tc up to ${nearbyMaxTc}K`;
 
-            return `<div class="region-item" data-region="${r.originalIndex}" onclick="focusRegion(${r.originalIndex})">
+            return `<div class="region-item" data-region="${r.originalIndex}">
                 <span class="region-rank priority-${priority}">${i + 1}</span>
                 <strong>Region ${i + 1}</strong>
                 <div class="region-coords">PCA: (${r.x.toFixed(2)}, ${r.y.toFixed(2)}) · density: ${r.density}</div>
@@ -795,7 +815,7 @@
         const top = sortedByTc.slice(0, count);
 
         body.innerHTML = top.map((m, i) => {
-            return `<div class="material-item" data-index="${allMaterials.indexOf(m)}" onclick="focusMaterial(${allMaterials.indexOf(m)})">
+            return `<div class="material-item" data-index="${allMaterials.indexOf(m)}">
                 <span class="mat-rank">${i + 1}</span>
                 <div class="mat-info">
                     <div>Mass: ${m.atomic_mass.toFixed(1)} · Radius: ${m.atomic_radius.toFixed(0)}pm</div>
@@ -923,21 +943,13 @@
     }
 
     function onClick(event) {
-        if (!pointCloud) return;
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObject(pointCloud);
-
-        if (intersects.length > 0) {
-            const idx = intersects[0].index;
-            focusMaterial(idx);
-        }
+        // Click-to-zoom disabled per user feedback
+        // Hover tooltips still work
     }
 
     renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-    renderer.domElement.addEventListener('click', onClick, false);
+    // Click handler removed - no zoom on click
+    // renderer.domElement.addEventListener('click', onClick, false);
 
     // ─── Panel Toggles ───────────────────────────────────────────────
     document.querySelectorAll('.panel-header').forEach(header => {
