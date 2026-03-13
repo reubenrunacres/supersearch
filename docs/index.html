@@ -666,6 +666,7 @@
             <span class="header-group-label">Color</span>
             <button class="header-btn active" id="btn-color-tc">Tc</button>
             <button class="header-btn" id="btn-color-cluster">Clusters</button>
+            <button class="header-btn" id="btn-color-stability">Stability</button>
         </div>
 
         <!-- View presets -->
@@ -954,7 +955,18 @@
             </div>
 
             <div class="about-section">
-                <h3>6. Limitations</h3>
+                <h3>6. External Validation</h3>
+                <p><strong>Materials Project cross-reference:</strong> Individual materials can be enriched with data from the Materials Project database via API. When available, this provides:</p>
+                <ul>
+                    <li><strong>Thermodynamic stability:</strong> Energy above convex hull (E<sub>hull</sub>). Materials with E<sub>hull</sub> = 0 are thermodynamically stable; E<sub>hull</sub> &lt; 0.1 eV/atom are metastable but potentially synthesizable; E<sub>hull</sub> &gt; 0.1 eV/atom are unlikely to form.</li>
+                    <li><strong>Synthesis verification:</strong> Materials with known crystal structures in Materials Project (n<sub>sites</sub> &gt; 0) have been experimentally characterized or computationally verified.</li>
+                    <li><strong>Electronic structure:</strong> Band gap and formation energy data from DFT calculations.</li>
+                </ul>
+                <p><strong>Prediction error analysis:</strong> The Hamidieh dataset provides only experimental T<sub>c</sub> measurements &mdash; no model predictions are included. A prediction-vs-experimental scatter plot is therefore not applicable to this dataset. Users seeking predictive models should apply regression techniques (e.g., Random Forest, XGBoost, neural networks) to the 81 compositional features with T<sub>c</sub> as the target variable.</p>
+            </div>
+
+            <div class="about-section">
+                <h3>7. Limitations</h3>
                 <ul>
                     <li><strong>Composition-only:</strong> No crystal structure data. CIF exports contain composition metadata only; use Materials Project for full structures.</li>
                     <li><strong>Heuristic scoring:</strong> Opportunity scores reflect compositional analysis, not thermodynamic or structural predictions.</li>
@@ -1144,6 +1156,23 @@
         return `rgb(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)})`;
     }
 
+    const STABILITY_COLORS = {
+        stable:     [0.18, 0.42, 0.31],  // Green
+        metastable: [0.72, 0.53, 0.04],  // Amber
+        unstable:   [0.77, 0.19, 0.19],  // Red
+        unknown:    [0.70, 0.70, 0.70],  // Gray (no MP data)
+    };
+
+    function getStabilityColor(m) {
+        const raw = (m.formula_raw || m.formula || '').replace(/[₀₁₂₃₄₅₆₇₈₉]/g, c => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(c)]);
+        const cacheKey = raw.toLowerCase();
+        const mpData = MP_API_CACHE[cacheKey];
+        if (!mpData || mpData.error || mpData.energy_above_hull == null) return STABILITY_COLORS.unknown;
+        if (mpData.energy_above_hull < 0.025) return STABILITY_COLORS.stable;
+        if (mpData.energy_above_hull < 0.1) return STABILITY_COLORS.metastable;
+        return STABILITY_COLORS.unstable;
+    }
+
     // ─── Axis Mapping ─────────────────────────────────────────────
     function getAxisValue(m, axis) {
         const opt = AXIS_OPTIONS[axis];
@@ -1258,7 +1287,7 @@
             if (searchElements.length > 0 && m.elements && searchElements.every(e => m.elements.includes(e))) {
                 c = SEARCH_HIGHLIGHT;
             } else {
-                c = colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
+                c = colorMode === 'stability' ? getStabilityColor(m) : colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
             }
             colors[i * 3] = c[0];
             colors[i * 3 + 1] = c[1];
@@ -1639,6 +1668,21 @@
         }
     }
 
+    function getStabilityInfo(mpData) {
+        if (!mpData || mpData.error || mpData.energy_above_hull == null) return null;
+        const ehull = mpData.energy_above_hull;
+        if (ehull === 0) return { label: 'Stable', color: '#2d6a4f', bg: 'rgba(45,106,79,0.08)', desc: 'On convex hull' };
+        if (ehull < 0.025) return { label: 'Stable', color: '#2d6a4f', bg: 'rgba(45,106,79,0.08)', desc: `${ehull.toFixed(4)} eV/atom above hull` };
+        if (ehull < 0.1) return { label: 'Metastable', color: '#b8860b', bg: 'rgba(184,134,11,0.08)', desc: `${ehull.toFixed(4)} eV/atom above hull` };
+        return { label: 'Unstable', color: '#c53030', bg: 'rgba(197,48,48,0.08)', desc: `${ehull.toFixed(4)} eV/atom above hull` };
+    }
+
+    function getSynthesizedInfo(mpData) {
+        if (!mpData || mpData.error) return null;
+        if (mpData.nsites && mpData.nsites > 0) return { label: 'Known Structure', color: '#2d6a4f', bg: 'rgba(45,106,79,0.08)', sites: mpData.nsites };
+        return { label: 'Composition Only', color: '#888', bg: 'rgba(0,0,0,0.04)', sites: 0 };
+    }
+
     function renderMPEnrichment(container, mpData) {
         if (!mpData || mpData.error) {
             container.innerHTML = mpData && mpData.error
@@ -1647,17 +1691,24 @@
             return;
         }
         const sym = mpData.symmetry || {};
+        const stab = getStabilityInfo(mpData);
+        const synth = getSynthesizedInfo(mpData);
+
         container.innerHTML = `
-            <div style="font-size:9px; color:#2d6a4f; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+            <div style="font-size:9px; color:#2d6a4f; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
                 Materials Project Data
             </div>
+            ${stab || synth ? `<div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                ${stab ? `<span style="display:inline-block; font-size:9px; padding:2px 8px; border-radius:3px; background:${stab.bg}; color:${stab.color}; border:1px solid ${stab.color}22;" title="${stab.desc}">${stab.label}</span>` : ''}
+                ${synth ? `<span style="display:inline-block; font-size:9px; padding:2px 8px; border-radius:3px; background:${synth.bg}; color:${synth.color}; border:1px solid ${synth.color}22;" title="${synth.sites ? synth.sites + ' sites in unit cell' : 'No crystal structure available'}">${synth.label}</span>` : ''}
+            </div>` : ''}
             <div class="detail-row"><span class="detail-row-label">MP ID</span><span class="detail-row-value"><a href="https://materialsproject.org/materials/${mpData.material_id}" target="_blank" rel="noopener" style="color:#2d6a4f;">${mpData.material_id}</a></span></div>
             ${mpData.formation_energy_per_atom != null ? `<div class="detail-row"><span class="detail-row-label">Formation E</span><span class="detail-row-value">${mpData.formation_energy_per_atom.toFixed(3)} eV/atom</span></div>` : ''}
             ${mpData.band_gap != null ? `<div class="detail-row"><span class="detail-row-label">Band Gap</span><span class="detail-row-value">${mpData.band_gap.toFixed(3)} eV</span></div>` : ''}
             ${mpData.density != null ? `<div class="detail-row"><span class="detail-row-label">Density (MP)</span><span class="detail-row-value">${mpData.density.toFixed(2)} g/cm&sup3;</span></div>` : ''}
             ${sym.symbol ? `<div class="detail-row"><span class="detail-row-label">Space Group</span><span class="detail-row-value">${sym.symbol}</span></div>` : ''}
-            ${mpData.energy_above_hull != null ? `<div class="detail-row"><span class="detail-row-label">E above hull</span><span class="detail-row-value">${mpData.energy_above_hull.toFixed(4)} eV/atom ${mpData.energy_above_hull === 0 ? '<span style="color:#2d6a4f;">Stable</span>' : mpData.energy_above_hull < 0.1 ? '<span style="color:#b8860b;">Metastable</span>' : '<span style="color:#c53030;">Unstable</span>'}</span></div>` : ''}
-            ${mpData.nsites ? `<div class="detail-row"><span class="detail-row-label">Synthesized</span><span class="detail-row-value" style="color:#2d6a4f;">Known structure (${mpData.nsites} sites)</span></div>` : ''}
+            ${mpData.energy_above_hull != null ? `<div class="detail-row"><span class="detail-row-label">E above hull</span><span class="detail-row-value">${mpData.energy_above_hull.toFixed(4)} eV/atom</span></div>` : ''}
+            ${mpData.nsites ? `<div class="detail-row"><span class="detail-row-label">Crystal sites</span><span class="detail-row-value">${mpData.nsites}</span></div>` : ''}
             <div style="font-size:8px; color:#aaa; margin-top:4px;">Powered by Materials Project</div>
         `;
     }
@@ -2752,24 +2803,30 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
     // ─── Header Button Handlers ───────────────────────────────────
     const btnColorTc = document.getElementById('btn-color-tc');
     const btnColorCluster = document.getElementById('btn-color-cluster');
+    const btnColorStability = document.getElementById('btn-color-stability');
     const btnRegions = document.getElementById('btn-regions');
     const btnFilters = document.getElementById('btn-filters');
     const btnAbout = document.getElementById('btn-about');
     const btnMethods = document.getElementById('btn-methods');
     const btnPeriodic = document.getElementById('btn-periodic');
 
-    btnColorTc.addEventListener('click', () => {
-        colorMode = 'tc';
-        btnColorTc.classList.add('active');
-        btnColorCluster.classList.remove('active');
+    function setColorMode(mode) {
+        colorMode = mode;
+        btnColorTc.classList.toggle('active', mode === 'tc');
+        btnColorCluster.classList.toggle('active', mode === 'cluster');
+        btnColorStability.classList.toggle('active', mode === 'stability');
         if (visibleMaterials.length) buildPointCloud(visibleMaterials);
-    });
+    }
 
-    btnColorCluster.addEventListener('click', () => {
-        colorMode = 'cluster';
-        btnColorCluster.classList.add('active');
-        btnColorTc.classList.remove('active');
-        if (visibleMaterials.length) buildPointCloud(visibleMaterials);
+    btnColorTc.addEventListener('click', () => setColorMode('tc'));
+    btnColorCluster.addEventListener('click', () => setColorMode('cluster'));
+    btnColorStability.addEventListener('click', () => {
+        const cached = Object.keys(MP_API_CACHE).length;
+        if (cached === 0) {
+            alert('No Materials Project data cached yet.\n\nClick on individual materials and use "Fetch Materials Project Data" to load stability information. Enriched materials will then appear colored by stability.');
+            return;
+        }
+        setColorMode('stability');
     });
 
     btnRegions.addEventListener('click', () => {
