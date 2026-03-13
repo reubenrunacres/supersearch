@@ -1302,6 +1302,7 @@
 
             <div class="detail-actions">
                 <button class="detail-btn primary" id="btn-find-similar">Find Similar</button>
+                <button class="detail-btn" id="btn-export-cif">Export CIF</button>
                 <button class="detail-btn" id="btn-copy-vector">Copy Feature Vector</button>
                 <button class="detail-btn" id="btn-pin-material">${isPinned ? 'Unpin' : 'Pin to Board'}</button>
                 <button class="detail-btn" id="btn-ai-explain">Why is this interesting?</button>
@@ -1348,6 +1349,51 @@
         document.getElementById('btn-ai-explain').addEventListener('click', () => {
             aiExplain(m);
         });
+
+        // Export CIF
+        document.getElementById('btn-export-cif').addEventListener('click', () => {
+            exportCIF(m);
+        });
+    }
+
+    function exportCIF(m) {
+        const formula = m.formula_raw || 'Unknown';
+        const safeId = formula.replace(/[^a-zA-Z0-9]/g, '_');
+        const elemList = (m.elements || []).join(' ');
+        const cif = [
+            `data_${safeId}`,
+            `_chemical_formula_sum '${formula}'`,
+            `_cell_length_a 5.000`,
+            `_cell_length_b 5.000`,
+            `_cell_length_c 5.000`,
+            `_cell_angle_alpha 90.000`,
+            `_cell_angle_beta 90.000`,
+            `_cell_angle_gamma 90.000`,
+            `_symmetry_space_group_name_H-M 'P 1'`,
+            ``,
+            `# SuperSearch Export (composition-only)`,
+            `# Critical temperature: ${m.tc} K`,
+            `# Elements: ${elemList}`,
+            `# Atomic mass (mean): ${m.atomic_mass.toFixed(2)}`,
+            `# Valence (mean): ${m.valence.toFixed(2)}`,
+            `#`,
+            `# NOTE: This CIF contains composition data only.`,
+            `# Atomic positions are unavailable (Hamidieh 2018 dataset).`,
+            `# For full crystal structure, search Materials Project:`,
+            `# https://materialsproject.org/materials?formula=${encodeURIComponent(formula)}`,
+        ].join('\n');
+        const blob = new Blob([cif], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${formula}.cif`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        const btn = document.getElementById('btn-export-cif');
+        btn.textContent = 'Downloaded!';
+        setTimeout(() => { btn.textContent = 'Export CIF'; }, 1500);
     }
 
     // ─── AI Explainer ───────────────────────────────────────────
