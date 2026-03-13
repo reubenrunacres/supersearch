@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperSearch - Superconductor Composition Explorer</title>
+    <title>SuperSearch v2 - Superconductor Composition Explorer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
@@ -18,409 +18,519 @@
             overflow: hidden;
         }
 
-        /* Header */
+        /* ── Header ───────────────────────────────────────────── */
         #header {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 16px 24px;
+            top: 0; left: 0; right: 0;
+            padding: 12px 20px;
             background: linear-gradient(180deg, #F5F3ED 60%, rgba(245,243,237,0) 100%);
             z-index: 100;
             display: flex;
-            align-items: baseline;
-            gap: 16px;
-        }
-        #title {
-            font-size: 18px;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: #1a1a1a;
-        }
-        #subtitle {
-            font-size: 11px;
-            color: #888;
-            letter-spacing: 0.3px;
-        }
-        #header-right {
-            margin-left: auto;
-            display: flex;
-            gap: 8px;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
+        #title { font-size: 16px; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; }
+        #subtitle { font-size: 10px; color: #888; letter-spacing: 0.3px; }
+        .header-group {
+            display: flex; gap: 4px; align-items: center;
+            margin-left: 8px;
+            padding-left: 8px;
+            border-left: 1px solid rgba(0,0,0,0.08);
+        }
+        .header-group:first-of-type { margin-left: auto; }
+        .header-group-label { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
         .header-btn {
-            background: rgba(0,0,0,0.06);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 4px;
-            padding: 5px 12px;
-            font-family: 'Fragment Mono', monospace;
-            font-size: 11px;
-            color: #555;
-            cursor: pointer;
-            transition: all 0.15s;
+            background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 4px; padding: 4px 10px;
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            color: #555; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap;
         }
-        .header-btn:hover {
-            background: rgba(0,0,0,0.1);
-            color: #1a1a1a;
+        .header-btn:hover { background: rgba(0,0,0,0.1); color: #1a1a1a; }
+        .header-btn.active { background: #1a1a1a; color: #F5F3ED; border-color: #1a1a1a; }
+
+        /* ── Search ───────────────────────────────────────────── */
+        #search-box {
+            position: relative;
+            margin-left: 8px;
         }
-        .header-btn.active {
-            background: #1a1a1a;
-            color: #F5F3ED;
-            border-color: #1a1a1a;
+        #search-input {
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            padding: 4px 28px 4px 10px;
+            border: 1px solid rgba(0,0,0,0.12); border-radius: 4px;
+            background: rgba(255,255,255,0.6); color: #1a1a1a;
+            width: 180px; outline: none; transition: border-color 0.15s;
+        }
+        #search-input:focus { border-color: rgba(0,0,0,0.3); }
+        #search-input::placeholder { color: #bbb; }
+        #search-clear {
+            position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; font-size: 12px; color: #aaa;
+            cursor: pointer; display: none; font-family: 'Fragment Mono', monospace;
+            padding: 0 4px;
+        }
+        #search-clear:hover { color: #555; }
+        #search-count {
+            font-size: 9px; color: #888; margin-left: 6px; white-space: nowrap;
         }
 
-        /* 3D Canvas */
-        #canvas {
-            width: 100vw;
-            height: 100vh;
-        }
+        /* ── 3D Canvas ────────────────────────────────────────── */
+        #canvas { width: 100vw; height: 100vh; }
 
-        /* Tooltip */
+        /* ── Tooltip ──────────────────────────────────────────── */
         #tooltip {
-            position: absolute;
+            position: absolute; display: none;
+            background: rgba(245,243,237,0.96); border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 4px; padding: 10px 14px; font-size: 11px; line-height: 1.6;
+            z-index: 200; pointer-events: none; backdrop-filter: blur(8px);
+            max-width: 280px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .tt-formula { font-size: 13px; color: #1a1a1a; margin-bottom: 2px; }
+        .tt-tc { font-size: 12px; color: #2d6a4f; margin-bottom: 4px; }
+        .tt-detail { color: #666; font-size: 10px; }
+
+        /* ── Left Filter Panel ────────────────────────────────── */
+        #filter-panel {
+            position: absolute; top: 56px; left: 12px; bottom: 56px;
+            width: 260px; z-index: 100;
+            background: rgba(245,243,237,0.94); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px; backdrop-filter: blur(8px);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+            overflow-y: auto; scrollbar-width: thin;
             display: none;
-            background: rgba(245,243,237,0.96);
-            border: 1px solid rgba(0,0,0,0.12);
-            border-radius: 4px;
-            padding: 10px 14px;
-            font-size: 11px;
-            line-height: 1.6;
-            z-index: 200;
-            pointer-events: none;
-            backdrop-filter: blur(8px);
-            max-width: 260px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            scrollbar-color: rgba(0,0,0,0.15) transparent;
         }
-        #tooltip .tt-tc {
-            font-size: 14px;
-            font-weight: 400;
-            color: #1a1a1a;
-            margin-bottom: 4px;
+        #filter-panel::-webkit-scrollbar { width: 4px; }
+        #filter-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+        .filter-section {
+            padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.06);
         }
-        #tooltip .tt-detail {
-            color: #666;
+        .filter-section:last-child { border-bottom: none; }
+        .filter-label {
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px;
+            color: #888; margin-bottom: 6px; display: flex; justify-content: space-between;
+        }
+        .filter-value { color: #555; font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+        /* Range slider */
+        .range-slider { position: relative; height: 20px; margin: 8px 0 4px; }
+        .range-slider input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            position: absolute; width: 100%; height: 4px;
+            background: transparent; pointer-events: none; top: 8px;
+        }
+        .range-slider input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 14px; width: 14px;
+            border-radius: 50%; background: #1a1a1a; cursor: pointer;
+            pointer-events: all; border: 2px solid #F5F3ED;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .range-track {
+            position: absolute; top: 8px; height: 4px;
+            background: rgba(0,0,0,0.08); border-radius: 2px; width: 100%;
+        }
+        .range-track-fill {
+            position: absolute; top: 0; height: 100%;
+            background: #2d6a4f; border-radius: 2px;
         }
 
-        /* Side Panels */
+        /* Quick filter buttons */
+        .quick-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .quick-filter {
+            font-family: 'Fragment Mono', monospace; font-size: 9px;
+            padding: 3px 8px; border: 1px solid rgba(0,0,0,0.1);
+            background: transparent; border-radius: 3px; cursor: pointer;
+            color: #666; transition: all 0.15s;
+        }
+        .quick-filter:hover { border-color: rgba(0,0,0,0.25); color: #333; }
+        .quick-filter.active { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
+
+        /* Element tag input */
+        .element-tags {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+        }
+        .element-tag {
+            font-size: 10px; padding: 2px 6px; background: rgba(45,106,79,0.1);
+            border: 1px solid rgba(45,106,79,0.2); border-radius: 3px;
+            color: #2d6a4f; display: flex; align-items: center; gap: 4px;
+        }
+        .element-tag-remove {
+            cursor: pointer; font-size: 10px; color: rgba(45,106,79,0.5);
+        }
+        .element-tag-remove:hover { color: #c53030; }
+        #element-input {
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            padding: 3px 8px; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 3px; background: rgba(255,255,255,0.6);
+            width: 60px; outline: none; color: #1a1a1a;
+        }
+        #element-input::placeholder { color: #ccc; }
+
+        /* Active filters badge */
+        #filter-badge {
+            display: none; background: #2d6a4f; color: #fff;
+            font-size: 9px; padding: 1px 5px; border-radius: 8px;
+            margin-left: 4px; vertical-align: middle;
+        }
+
+        /* Cluster toggles */
+        .cluster-toggle { display: flex; align-items: center; gap: 6px; margin: 3px 0; cursor: pointer; }
+        .cluster-toggle input { cursor: pointer; }
+        .cluster-toggle-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .cluster-toggle-label { font-size: 10px; color: #555; }
+
+        /* ── Side Panels (right) ──────────────────────────────── */
         #panels {
-            position: absolute;
-            top: 56px;
-            right: 12px;
-            bottom: 12px;
-            width: 320px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            overflow-y: auto;
-            scrollbar-width: thin;
+            position: absolute; top: 56px; right: 12px; bottom: 12px;
+            width: 320px; z-index: 100;
+            display: none; flex-direction: column; gap: 8px;
+            overflow-y: auto; scrollbar-width: thin;
             scrollbar-color: rgba(0,0,0,0.15) transparent;
         }
         #panels::-webkit-scrollbar { width: 4px; }
         #panels::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
-
         .panel {
-            background: rgba(245,243,237,0.94);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 6px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 1px 8px rgba(0,0,0,0.04);
-            overflow: hidden;
-            flex-shrink: 0;
+            background: rgba(245,243,237,0.94); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px; backdrop-filter: blur(8px);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.04); overflow: hidden; flex-shrink: 0;
         }
         .panel-header {
-            padding: 10px 14px;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #888;
+            padding: 10px 14px; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #888;
             border-bottom: 1px solid rgba(0,0,0,0.06);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            user-select: none;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; user-select: none;
         }
-        .panel-header:hover {
-            color: #555;
-        }
-        .panel-toggle {
-            font-size: 9px;
-            transition: transform 0.2s;
-        }
-        .panel-toggle.collapsed {
-            transform: rotate(-90deg);
-        }
+        .panel-header:hover { color: #555; }
+        .panel-toggle { font-size: 9px; transition: transform 0.2s; }
+        .panel-toggle.collapsed { transform: rotate(-90deg); }
         .panel-body {
-            padding: 10px 14px;
-            font-size: 11px;
-            line-height: 1.5;
-            max-height: 400px;
-            overflow-y: auto;
-            scrollbar-width: thin;
+            padding: 10px 14px; font-size: 11px; line-height: 1.5;
+            max-height: 400px; overflow-y: auto; scrollbar-width: thin;
         }
-        .panel-body.collapsed {
-            display: none;
-        }
+        .panel-body.collapsed { display: none; }
 
-        /* Stats bar at bottom-left */
+        /* ── Stats Bar (bottom-left) ──────────────────────────── */
         #stats-bar {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            background: rgba(245,243,237,0.94);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 6px;
-            padding: 10px 16px;
-            font-size: 11px;
-            z-index: 100;
-            backdrop-filter: blur(8px);
-            color: #666;
-            display: flex;
-            gap: 20px;
+            position: absolute; bottom: 12px; left: 12px;
+            background: rgba(245,243,237,0.94); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px; padding: 8px 14px; font-size: 11px;
+            z-index: 100; backdrop-filter: blur(8px); color: #666;
+            display: none; gap: 16px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.04);
         }
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .stat-value {
-            font-size: 14px;
-            color: #1a1a1a;
-        }
-        .stat-label {
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #999;
-        }
+        .stat-item { display: flex; flex-direction: column; gap: 1px; }
+        .stat-value { font-size: 13px; color: #1a1a1a; }
+        .stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; }
 
-        /* Opportunity Region List */
+        /* ── Region items ─────────────────────────────────────── */
         .region-item {
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
+            padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04); cursor: pointer;
         }
         .region-item:last-child { border-bottom: none; }
+        .region-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 8px 14px; }
+        .region-item.highlighted { background: rgba(45,106,79,0.06); margin: 0 -14px; padding: 8px 14px; }
         .region-rank {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            text-align: center;
-            background: rgba(0,0,0,0.06);
-            border-radius: 3px;
-            font-size: 10px;
-            color: #555;
-            margin-right: 8px;
-            vertical-align: middle;
+            display: inline-block; width: 20px; height: 20px; line-height: 20px;
+            text-align: center; background: rgba(0,0,0,0.06); border-radius: 3px;
+            font-size: 10px; color: #555; margin-right: 8px; vertical-align: middle;
         }
-        .region-rank.priority-high {
-            background: #2d6a4f;
-            color: #fff;
-        }
-        .region-rank.priority-med {
-            background: #6b705c;
-            color: #fff;
-        }
-        .region-coords {
-            font-size: 10px;
-            color: #999;
-            margin-top: 3px;
-        }
-        .region-reason {
-            font-size: 10px;
-            color: #777;
-            margin-top: 2px;
-            font-style: italic;
-        }
+        .region-rank.priority-high { background: #2d6a4f; color: #fff; }
+        .region-rank.priority-med { background: #6b705c; color: #fff; }
+        .region-coords { font-size: 10px; color: #999; margin-top: 3px; }
+        .region-score { font-size: 11px; color: #2d6a4f; font-weight: 400; margin-top: 2px; }
 
-        /* Material List */
+        /* Score breakdown bars */
+        .score-bars { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin-top: 4px; gap: 1px; }
+        .score-bar { height: 100%; }
+        .score-bar.sparseness { background: #2d6a4f; }
+        .score-bar.tc-proximity { background: #7b2d8b; }
+        .score-bar.novelty { background: #2d5fa1; }
+        .score-bar.feasibility { background: #c97b2d; }
+        .score-legend {
+            display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;
+        }
+        .score-legend-item { font-size: 8px; color: #999; display: flex; align-items: center; gap: 3px; }
+        .score-legend-dot { width: 6px; height: 6px; border-radius: 1px; }
+
+        .region-neighbors { margin-top: 4px; }
+        .region-neighbor { font-size: 9px; color: #777; }
+
+        /* ── Material items ───────────────────────────────────── */
         .material-item {
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
+            padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+            display: flex; justify-content: space-between; align-items: baseline;
+            cursor: pointer;
         }
         .material-item:last-child { border-bottom: none; }
-        .mat-rank {
-            color: #bbb;
-            font-size: 10px;
-            width: 20px;
-            flex-shrink: 0;
-        }
-        .mat-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .mat-props {
-            font-size: 10px;
-            color: #999;
-        }
-        .mat-tc {
-            font-weight: 400;
-            color: #2d6a4f;
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
-        /* Cluster Stats */
-        .cluster-item {
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .cluster-item:last-child { border-bottom: none; }
-        .cluster-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .cluster-info {
-            flex: 1;
-        }
-        .cluster-name {
-            font-size: 11px;
-            color: #1a1a1a;
-        }
-        .cluster-stats {
-            font-size: 10px;
-            color: #999;
-        }
-        .cluster-bar {
-            height: 3px;
-            background: rgba(0,0,0,0.06);
-            border-radius: 2px;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-        .cluster-bar-fill {
-            height: 100%;
-            border-radius: 2px;
-        }
-
-        /* About Overlay */
-        #about-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.3);
-            z-index: 500;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(2px);
-        }
-        #about-overlay.visible {
-            display: flex;
-        }
-        #about-content {
-            background: #F5F3ED;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 8px;
-            padding: 32px 36px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            font-size: 12px;
-            line-height: 1.7;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.12);
-            position: relative;
-        }
-        #about-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #999;
-            font-family: 'Fragment Mono', monospace;
-            padding: 4px 8px;
-        }
-        #about-close:hover { color: #1a1a1a; }
-        .about-title {
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 20px;
-            color: #1a1a1a;
-        }
-        .about-section {
-            margin-bottom: 20px;
-        }
-        .about-section h3 {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: #888;
-            margin-bottom: 8px;
-            font-weight: 400;
-        }
-        .about-section p {
-            color: #444;
-            margin-bottom: 8px;
-        }
-        .about-section ul {
-            list-style: none;
-            padding: 0;
-        }
-        .about-section ul li {
-            padding: 3px 0;
-            color: #555;
-        }
-        .about-section ul li::before {
-            content: "→ ";
-            color: #2d6a4f;
-        }
-
-        /* View toggle buttons in panels */
+        .material-item:hover { background: rgba(0,0,0,0.02); margin: 0 -14px; padding: 6px 14px; }
+        .mat-rank { color: #bbb; font-size: 10px; width: 20px; flex-shrink: 0; }
+        .mat-info { flex: 1; min-width: 0; }
+        .mat-formula { font-size: 11px; color: #1a1a1a; }
+        .mat-props { font-size: 9px; color: #999; }
+        .mat-tc { font-weight: 400; color: #2d6a4f; flex-shrink: 0; margin-left: 8px; }
         .view-toggles {
-            display: flex;
-            gap: 4px;
-            padding: 8px 14px;
+            display: flex; gap: 4px; padding: 8px 14px;
             border-bottom: 1px solid rgba(0,0,0,0.06);
         }
         .view-toggle {
-            font-family: 'Fragment Mono', monospace;
-            font-size: 10px;
-            padding: 3px 8px;
-            border: 1px solid rgba(0,0,0,0.1);
-            background: transparent;
-            border-radius: 3px;
-            cursor: pointer;
-            color: #888;
-            transition: all 0.15s;
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            padding: 3px 8px; border: 1px solid rgba(0,0,0,0.1);
+            background: transparent; border-radius: 3px; cursor: pointer;
+            color: #888; transition: all 0.15s;
         }
         .view-toggle:hover { color: #555; border-color: rgba(0,0,0,0.2); }
-        .view-toggle.active {
-            background: #1a1a1a;
-            color: #F5F3ED;
-            border-color: #1a1a1a;
+        .view-toggle.active { background: #1a1a1a; color: #F5F3ED; border-color: #1a1a1a; }
+
+        /* ── Cluster Stats ────────────────────────────────────── */
+        .cluster-item {
+            padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .cluster-item:last-child { border-bottom: none; }
+        .cluster-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .cluster-info { flex: 1; }
+        .cluster-name { font-size: 11px; color: #1a1a1a; }
+        .cluster-stats { font-size: 10px; color: #999; }
+        .cluster-bar { height: 3px; background: rgba(0,0,0,0.06); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+        .cluster-bar-fill { height: 100%; border-radius: 2px; }
+
+        /* ── Detail Panel (slide-out) ─────────────────────────── */
+        #detail-panel {
+            position: absolute; top: 0; right: -400px; bottom: 0;
+            width: 380px; z-index: 300;
+            background: rgba(245,243,237,0.98); border-left: 1px solid rgba(0,0,0,0.1);
+            backdrop-filter: blur(12px); box-shadow: -4px 0 20px rgba(0,0,0,0.06);
+            transition: right 0.3s ease; overflow-y: auto;
+            scrollbar-width: thin; padding: 20px;
+        }
+        #detail-panel.open { right: 0; }
+        #detail-close {
+            position: absolute; top: 12px; right: 12px;
+            background: none; border: none; font-size: 18px; cursor: pointer;
+            color: #999; font-family: 'Fragment Mono', monospace; padding: 4px 8px;
+        }
+        #detail-close:hover { color: #1a1a1a; }
+        .detail-formula { font-size: 18px; color: #1a1a1a; margin-bottom: 4px; }
+        .detail-tc { font-size: 14px; color: #2d6a4f; margin-bottom: 16px; }
+        .detail-section { margin-bottom: 16px; }
+        .detail-section-title {
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px;
+            color: #888; margin-bottom: 6px;
+        }
+        .detail-row {
+            display: flex; justify-content: space-between;
+            font-size: 11px; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .detail-row-label { color: #666; }
+        .detail-row-value { color: #1a1a1a; }
+        .detail-elements { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .detail-element {
+            font-size: 10px; padding: 2px 6px; background: rgba(45,106,79,0.08);
+            border: 1px solid rgba(45,106,79,0.15); border-radius: 3px; color: #2d6a4f;
+        }
+        .detail-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+        .detail-btn {
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            padding: 6px 12px; border: 1px solid rgba(0,0,0,0.12);
+            background: rgba(0,0,0,0.04); border-radius: 4px; cursor: pointer;
+            color: #444; transition: all 0.15s;
+        }
+        .detail-btn:hover { background: rgba(0,0,0,0.08); color: #1a1a1a; }
+        .detail-btn.primary { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
+        .detail-btn.primary:hover { background: #1a5a3f; }
+        #detail-neighbors { margin-top: 8px; }
+
+        /* ── About Overlay ────────────────────────────────────── */
+        #about-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+            z-index: 500; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        #about-overlay.visible { display: flex; }
+        #about-content {
+            background: #F5F3ED; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px; padding: 32px 36px; max-width: 600px; width: 90%;
+            max-height: 80vh; overflow-y: auto; font-size: 12px; line-height: 1.7;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.12); position: relative;
+        }
+        #about-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 18px; cursor: pointer; color: #999; font-family: 'Fragment Mono', monospace; padding: 4px 8px; }
+        #about-close:hover { color: #1a1a1a; }
+        .about-title { font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
+        .about-section { margin-bottom: 20px; }
+        .about-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #888; margin-bottom: 8px; font-weight: 400; }
+        .about-section p { color: #444; margin-bottom: 8px; }
+        .about-section ul { list-style: none; padding: 0; }
+        .about-section ul li { padding: 3px 0; color: #555; }
+        .about-section ul li::before { content: "\2192 "; color: #2d6a4f; }
+
+        /* ── Onboarding Tour ──────────────────────────────────── */
+        #tour-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 600; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        #tour-overlay.visible { display: flex; }
+        #tour-card {
+            background: #F5F3ED; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px; padding: 28px 32px; max-width: 460px; width: 90%;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15); position: relative;
+            text-align: center;
+        }
+        .tour-step-indicator {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 16px;
+        }
+        .tour-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.1);
+        }
+        .tour-dot.active { background: #2d6a4f; }
+        .tour-title { font-size: 14px; color: #1a1a1a; margin-bottom: 12px; }
+        .tour-text { font-size: 12px; color: #555; line-height: 1.7; margin-bottom: 20px; }
+        .tour-actions { display: flex; gap: 8px; justify-content: center; }
+        .tour-btn {
+            font-family: 'Fragment Mono', monospace; font-size: 11px;
+            padding: 8px 20px; border-radius: 4px; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .tour-btn-primary {
+            background: #2d6a4f; color: #fff; border: 1px solid #2d6a4f;
+        }
+        .tour-btn-primary:hover { background: #1a5a3f; }
+        .tour-btn-skip {
+            background: transparent; color: #999; border: 1px solid rgba(0,0,0,0.1);
+        }
+        .tour-btn-skip:hover { color: #555; border-color: rgba(0,0,0,0.2); }
+        .tour-checkbox { margin-top: 12px; font-size: 10px; color: #999; }
+        .tour-checkbox input { margin-right: 4px; }
+
+        /* ── Periodic Table Overlay ───────────────────────────── */
+        #periodic-overlay {
+            position: fixed; inset: 0; background: rgba(245,243,237,0.98);
+            z-index: 400; display: none; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding: 20px; overflow-y: auto;
+        }
+        #periodic-overlay.visible { display: flex; }
+        #periodic-close {
+            position: absolute; top: 16px; right: 20px;
+            background: none; border: none; font-size: 18px; cursor: pointer;
+            color: #999; font-family: 'Fragment Mono', monospace; padding: 4px 8px;
+        }
+        #periodic-close:hover { color: #1a1a1a; }
+        #periodic-title {
+            font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 8px; margin-top: 8px;
+        }
+        #periodic-subtitle { font-size: 11px; color: #888; margin-bottom: 20px; }
+        #periodic-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            gap: 2px;
+            max-width: 900px;
+            width: 100%;
+        }
+        .pt-cell {
+            aspect-ratio: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 3px; cursor: pointer; font-size: 11px;
+            transition: all 0.15s; border: 1px solid transparent;
+            position: relative;
+        }
+        .pt-cell:hover { border-color: #1a1a1a; transform: scale(1.1); z-index: 2; }
+        .pt-cell .pt-symbol { font-weight: 400; }
+        .pt-cell .pt-number { font-size: 7px; color: rgba(0,0,0,0.4); }
+        .pt-cell.empty { pointer-events: none; }
+        .pt-tooltip {
+            display: none; position: absolute; bottom: 110%; left: 50%;
+            transform: translateX(-50%); background: #F5F3ED;
+            border: 1px solid rgba(0,0,0,0.15); border-radius: 4px;
+            padding: 8px 12px; font-size: 10px; line-height: 1.5;
+            white-space: nowrap; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            pointer-events: none;
+        }
+        .pt-cell:hover .pt-tooltip { display: block; }
+
+        /* ── Hypothesis Board ─────────────────────────────────── */
+        #hypothesis-panel {
+            position: absolute; bottom: 12px; right: 344px;
+            width: 280px; max-height: 300px; z-index: 100;
+            background: rgba(245,243,237,0.94); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px; backdrop-filter: blur(8px);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+            display: none; overflow: hidden;
+        }
+        #hypothesis-panel .panel-header {
+            padding: 8px 14px; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #888;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        #hypothesis-list {
+            padding: 8px 14px; overflow-y: auto; max-height: 200px;
+            scrollbar-width: thin;
+        }
+        .hyp-item {
+            padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+            font-size: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .hyp-item:last-child { border-bottom: none; }
+        .hyp-remove { cursor: pointer; color: #ccc; font-size: 10px; }
+        .hyp-remove:hover { color: #c53030; }
+        .hyp-formula { flex: 1; color: #1a1a1a; }
+        .hyp-tc { color: #2d6a4f; font-size: 9px; }
+        #hypothesis-actions {
+            padding: 6px 14px 8px; border-top: 1px solid rgba(0,0,0,0.06);
+            display: flex; gap: 4px;
         }
 
-        /* Loading state */
+        /* ── Citation Panel ───────────────────────────────────── */
+        #citation-bar {
+            position: absolute; bottom: 12px; right: 12px;
+            z-index: 90; font-size: 9px; color: #aaa;
+            max-width: 320px; text-align: right;
+            display: none;
+        }
+        #citation-bar a { color: #888; text-decoration: none; }
+        #citation-bar a:hover { color: #555; text-decoration: underline; }
+
+        /* ── AI Explainer Card ────────────────────────────────── */
+        .ai-explainer {
+            background: rgba(45,106,79,0.04); border: 1px solid rgba(45,106,79,0.12);
+            border-radius: 4px; padding: 10px 12px; margin-top: 8px;
+            font-size: 10px; line-height: 1.6; color: #444;
+        }
+        .ai-explainer.loading { color: #999; font-style: italic; }
+        .ai-explainer.error { color: #c53030; border-color: rgba(197,48,48,0.2); background: rgba(197,48,48,0.04); }
+
+        /* ── Axis Labels ──────────────────────────────────────── */
+        #axis-labels {
+            position: absolute; bottom: 48px; left: 50%;
+            transform: translateX(-50%); z-index: 50;
+            font-size: 9px; color: #aaa; display: none;
+            gap: 20px;
+        }
+        .axis-label-item { display: flex; align-items: center; gap: 4px; }
+        .axis-color { width: 10px; height: 2px; border-radius: 1px; }
+
+        /* ── Loading ──────────────────────────────────────────── */
         .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 13px;
-            color: #999;
-            z-index: 50;
+            font-size: 13px; color: #999; z-index: 50;
         }
 
-        /* Highlighted region in 3D viz */
-        .region-item.highlighted {
-            background: rgba(45,106,79,0.06);
-            margin: 0 -14px;
-            padding: 8px 14px;
+        /* ── URL share toast ──────────────────────────────────── */
+        #share-toast {
+            position: fixed; bottom: 60px; left: 50%;
+            transform: translateX(-50%); background: #1a1a1a; color: #F5F3ED;
+            padding: 8px 16px; border-radius: 4px; font-size: 11px;
+            z-index: 700; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* ── Highlighted search points ────────────────────────── */
+        .search-highlight-info {
+            font-size: 9px; color: #888; margin-top: 2px;
         }
     </style>
 </head>
@@ -429,11 +539,36 @@
     <div id="header">
         <div id="title">SuperSearch</div>
         <div id="subtitle">Superconductor Composition Explorer</div>
-        <div id="header-right">
-            <button class="header-btn" id="btn-color-tc" title="Color by critical temperature">Tc</button>
-            <button class="header-btn" id="btn-color-cluster" title="Color by cluster assignment">Clusters</button>
-            <button class="header-btn" id="btn-regions" title="Toggle opportunity regions in 3D">Regions</button>
-            <button class="header-btn" id="btn-about" title="About SuperSearch">About</button>
+
+        <!-- Search -->
+        <div id="search-box">
+            <input id="search-input" type="text" placeholder="Search elements (Cu, Hg...)">
+            <button id="search-clear">&times;</button>
+        </div>
+        <span id="search-count"></span>
+
+        <!-- Color mode -->
+        <div class="header-group">
+            <span class="header-group-label">Color</span>
+            <button class="header-btn active" id="btn-color-tc">Tc</button>
+            <button class="header-btn" id="btn-color-cluster">Clusters</button>
+        </div>
+
+        <!-- View presets -->
+        <div class="header-group">
+            <span class="header-group-label">View</span>
+            <button class="header-btn active" id="btn-preset-pca">PCA</button>
+            <button class="header-btn" id="btn-preset-umap">UMAP</button>
+            <button class="header-btn" id="btn-preset-tcmass">Tc/Mass</button>
+            <button class="header-btn" id="btn-preset-valence">Valence</button>
+        </div>
+
+        <!-- Toggles -->
+        <div class="header-group">
+            <button class="header-btn active" id="btn-regions">Regions</button>
+            <button class="header-btn" id="btn-filters">Filters<span id="filter-badge"></span></button>
+            <button class="header-btn" id="btn-periodic">Periodic</button>
+            <button class="header-btn" id="btn-about">About</button>
         </div>
     </div>
 
@@ -443,15 +578,75 @@
 
     <!-- Tooltip -->
     <div id="tooltip">
+        <div class="tt-formula"></div>
         <div class="tt-tc"></div>
         <div class="tt-detail"></div>
     </div>
 
+    <!-- Filter Panel (left) -->
+    <div id="filter-panel">
+        <div class="filter-section">
+            <div class="filter-label">
+                <span>Tc Range (K)</span>
+                <span class="filter-value" id="tc-range-display">0 — 185</span>
+            </div>
+            <div class="range-slider" id="tc-slider">
+                <div class="range-track"><div class="range-track-fill" id="tc-track-fill"></div></div>
+                <input type="range" id="tc-min" min="0" max="185" value="0" step="1">
+                <input type="range" id="tc-max" min="0" max="185" value="185" step="1">
+            </div>
+            <div class="quick-filters">
+                <button class="quick-filter" data-filter="ln2">Above LN₂ (>77K)</button>
+                <button class="quick-filter" data-filter="high-tc">High-Tc (>100K)</button>
+                <button class="quick-filter" data-filter="cuprates">Cuprates</button>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">Elements</div>
+            <div class="element-tags" id="element-tags"></div>
+            <input id="element-input" type="text" placeholder="Cu...">
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">Clusters</div>
+            <div id="cluster-toggles"></div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">
+                <span>Atomic Mass</span>
+                <span class="filter-value" id="mass-range-display">—</span>
+            </div>
+            <div class="range-slider" id="mass-slider">
+                <div class="range-track"><div class="range-track-fill" id="mass-track-fill"></div></div>
+                <input type="range" id="mass-min" min="0" max="300" value="0" step="1">
+                <input type="range" id="mass-max" min="0" max="300" value="300" step="1">
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">
+                <span>Valence</span>
+                <span class="filter-value" id="valence-range-display">—</span>
+            </div>
+            <div class="range-slider" id="valence-slider">
+                <div class="range-track"><div class="range-track-fill" id="valence-track-fill"></div></div>
+                <input type="range" id="valence-min" min="0" max="8" value="0" step="0.1">
+                <input type="range" id="valence-max" min="0" max="8" value="8" step="0.1">
+            </div>
+        </div>
+
+        <div class="filter-section" style="text-align: center;">
+            <button class="detail-btn" id="btn-clear-filters" style="font-size:10px;">Clear All Filters</button>
+        </div>
+    </div>
+
     <!-- Stats Bar -->
-    <div id="stats-bar" style="display:none;">
+    <div id="stats-bar">
         <div class="stat-item">
             <span class="stat-value" id="stat-materials">—</span>
-            <span class="stat-label">Materials</span>
+            <span class="stat-label">Visible</span>
         </div>
         <div class="stat-item">
             <span class="stat-value" id="stat-clusters">—</span>
@@ -467,22 +662,19 @@
         </div>
     </div>
 
-    <!-- Side Panels -->
-    <div id="panels" style="display:none;">
-        <!-- Opportunity Regions -->
+    <!-- Side Panels (right) -->
+    <div id="panels">
         <div class="panel" id="panel-regions">
             <div class="panel-header" data-panel="regions">
                 <span>Opportunity Regions</span>
-                <span class="panel-toggle" id="toggle-regions">▼</span>
+                <span class="panel-toggle" id="toggle-regions">&#9660;</span>
             </div>
             <div class="panel-body" id="body-regions"></div>
         </div>
-
-        <!-- Top Materials -->
         <div class="panel" id="panel-materials">
             <div class="panel-header" data-panel="materials">
                 <span>Highest-Tc Materials</span>
-                <span class="panel-toggle" id="toggle-materials">▼</span>
+                <span class="panel-toggle" id="toggle-materials">&#9660;</span>
             </div>
             <div class="view-toggles" id="mat-toggles">
                 <button class="view-toggle active" data-show="20">Top 20</button>
@@ -491,92 +683,159 @@
             </div>
             <div class="panel-body" id="body-materials"></div>
         </div>
-
-        <!-- Cluster Analysis -->
         <div class="panel" id="panel-clusters">
             <div class="panel-header" data-panel="clusters">
                 <span>Cluster Analysis</span>
-                <span class="panel-toggle" id="toggle-clusters">▼</span>
+                <span class="panel-toggle" id="toggle-clusters">&#9660;</span>
             </div>
             <div class="panel-body" id="body-clusters"></div>
+        </div>
+    </div>
+
+    <!-- Detail Panel (slide-out) -->
+    <div id="detail-panel">
+        <button id="detail-close">&times;</button>
+        <div id="detail-content"></div>
+    </div>
+
+    <!-- Hypothesis Board -->
+    <div id="hypothesis-panel">
+        <div class="panel-header">
+            <span>Hypothesis Board</span>
+            <span id="hyp-count">0</span>
+        </div>
+        <div id="hypothesis-list"></div>
+        <div id="hypothesis-actions">
+            <button class="detail-btn" id="hyp-export-csv" style="font-size:9px;">Export CSV</button>
+            <button class="detail-btn" id="hyp-copy-link" style="font-size:9px;">Copy Link</button>
+            <button class="detail-btn" id="hyp-clear" style="font-size:9px;">Clear</button>
         </div>
     </div>
 
     <!-- About Overlay -->
     <div id="about-overlay">
         <div id="about-content">
-            <button id="about-close">×</button>
-            <div class="about-title">About SuperSearch</div>
-
+            <button id="about-close">&times;</button>
+            <div class="about-title">About SuperSearch v2</div>
             <div class="about-section">
                 <h3>What is this?</h3>
-                <p>SuperSearch maps the known superconductor composition space using dimensionality reduction (PCA) on 21,263 materials from the UCI Superconductivity Database. Each point represents a material, positioned by its elemental composition features and colored by critical temperature (Tc).</p>
+                <p>SuperSearch maps the known superconductor composition space using dimensionality reduction (PCA + UMAP) on 21,263 materials from the UCI Superconductivity Database. Each point represents a named material, positioned by its elemental composition and colored by critical temperature.</p>
             </div>
-
             <div class="about-section">
                 <h3>Complementing GNoME Predictions</h3>
-                <p>Google DeepMind's GNoME predicted 380,000+ stable crystal structures, but predicting stability is different from predicting superconductivity. SuperSearch identifies where experimental coverage is thin — the gaps between known materials that GNoME's candidates could fill.</p>
+                <p>Google DeepMind's GNoME predicted 380,000+ stable crystal structures, but stability differs from superconductivity. SuperSearch identifies thin experimental coverage — gaps that GNoME candidates could fill.</p>
                 <ul>
                     <li>GNoME provides candidate structures</li>
                     <li>SuperSearch shows where to look first</li>
                     <li>Together: targeted synthesis priorities</li>
                 </ul>
             </div>
-
             <div class="about-section">
-                <h3>Guiding Autonomous Lab Prioritization</h3>
-                <p>For an autonomous lab deciding what to synthesize next, composition space coverage matters. The opportunity regions highlighted here represent unexplored neighborhoods adjacent to known high-Tc materials — the highest-value targets for experimental campaigns.</p>
-                <ul>
-                    <li>Sparse regions → experimental priorities</li>
-                    <li>Cluster boundaries → composition phase transitions</li>
-                    <li>High-Tc patterns → hypothesis generation</li>
-                </ul>
+                <h3>Multi-Factor Opportunity Scoring</h3>
+                <p>Regions are scored on four axes: sparseness (40%), proximity to high-Tc materials (30%), compositional novelty (20%), and synthesis feasibility (10%). Higher scores indicate better synthesis candidates.</p>
             </div>
-
             <div class="about-section">
-                <h3>Hypothesis Generation</h3>
-                <p>SuperSearch enables systematic hypothesis generation: "Materials with atomic mass 85–115 and valence ~2.0–2.5 cluster in the high-Tc region. Unexplored compositions in adjacent sparse zones with similar properties are strong synthesis candidates."</p>
+                <h3>Data &amp; Methods</h3>
+                <p>21,263 superconductors from the UCI Superconductivity Database (Hamidieh, 2018). 10 elemental statistics features. PCA retains 73.5% variance in 2 components. UMAP with n_neighbors=15, min_dist=0.1. DBSCAN clustering (eps=0.5, min_samples=10) identifies 3 composition families.</p>
             </div>
-
             <div class="about-section">
-                <h3>Integration Roadmap</h3>
-                <ul>
-                    <li>Phase 1: Visual exploration tool (current)</li>
-                    <li>Phase 2: API for autonomous lab integration</li>
-                    <li>Phase 3: Real-time feedback from synthesis results</li>
-                    <li>Phase 4: Active learning loop with AI scientist</li>
-                </ul>
-            </div>
-
-            <div class="about-section">
-                <h3>Data</h3>
-                <p>21,263 superconductors from the UCI Superconductivity Database (Hamidieh, 2018). Features: mean atomic mass, atomic radius, valence, and 7 other elemental statistics. PCA retains 73.5% variance in 2 components. DBSCAN identifies 3 composition families. 5,000-point sample displayed for performance.</p>
+                <h3>Citation</h3>
+                <p style="font-size:10px; color:#666;">Hamidieh, K. (2018). A data-driven statistical model for predicting the critical temperature of a superconductor. <em>Computational Materials Science</em>, 154, 346-354.</p>
             </div>
         </div>
     </div>
 
+    <!-- Onboarding Tour -->
+    <div id="tour-overlay">
+        <div id="tour-card">
+            <div class="tour-step-indicator" id="tour-dots"></div>
+            <div class="tour-title" id="tour-title"></div>
+            <div class="tour-text" id="tour-text"></div>
+            <div class="tour-actions">
+                <button class="tour-btn tour-btn-skip" id="tour-skip">Skip</button>
+                <button class="tour-btn tour-btn-primary" id="tour-next">Next</button>
+            </div>
+            <div class="tour-checkbox">
+                <label><input type="checkbox" id="tour-dont-show"> Don't show again</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Periodic Table Overlay -->
+    <div id="periodic-overlay">
+        <button id="periodic-close">&times;</button>
+        <div id="periodic-title">Periodic Table Heatmap</div>
+        <div id="periodic-subtitle">Element frequency in superconductors with Tc > 77K (liquid nitrogen)</div>
+        <div id="periodic-grid"></div>
+    </div>
+
+    <!-- Share Toast -->
+    <div id="share-toast">Link copied to clipboard</div>
+
     <script>
-    // ─── State ───────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    //  SuperSearch v2 — Superconductor Composition Explorer
+    // ════════════════════════════════════════════════════════════════
+
+    // ─── State ────────────────────────────────────────────────────
     let allMaterials = [];
+    let visibleMaterials = [];
     let sortedByTc = [];
     let sparseRegions = [];
+    let elementStats = {};
     let metadata = {};
     let regionMeshes = [];
     let showRegions = true;
-    let colorMode = 'tc'; // 'tc' or 'cluster'
+    let colorMode = 'tc';
     let pointCloud = null;
     let materialCount = 20;
+    let hypothesisBoard = [];
+    let selectedMaterialIndex = -1;
+    let neighborHighlights = [];
+    let searchHighlightColor = null;
 
-    // Data ranges (set after load)
-    let xMin, xMax, yMin, yMax, tcMin, tcMax;
+    // Axis configuration
+    let axisConfig = {
+        x: 'pca1', y: 'tc', z: 'pca2'
+    };
+    const AXIS_OPTIONS = {
+        'pca1': { label: 'PCA-1', get: m => m.x },
+        'pca2': { label: 'PCA-2', get: m => m.y },
+        'umap1': { label: 'UMAP-1', get: m => m.umap_x },
+        'umap2': { label: 'UMAP-2', get: m => m.umap_y },
+        'tc': { label: 'Tc (K)', get: m => m.tc },
+        'mass': { label: 'Atomic Mass', get: m => m.atomic_mass },
+        'radius': { label: 'Atomic Radius', get: m => m.atomic_radius },
+        'valence': { label: 'Valence', get: m => m.valence },
+        'density': { label: 'Density', get: m => m.density },
+    };
 
-    // Raycaster for hover/click
+    // Filter state
+    let filters = {
+        tcMin: 0, tcMax: 185,
+        elements: [],
+        clusters: new Set([0, 1, -1]),
+        massMin: 0, massMax: 300,
+        valenceMin: 0, valenceMax: 8,
+    };
+
+    // Data ranges
+    let dataRanges = {};
+
+    // Raycaster
     const raycaster = new THREE.Raycaster();
     raycaster.params.Points.threshold = 1.2;
     const mouse = new THREE.Vector2();
     let hoveredIndex = -1;
 
-    // ─── Scene Setup ─────────────────────────────────────────────────
+    // Animation state for axis transitions
+    let animatingAxes = false;
+    let animStartPositions = null;
+    let animTargetPositions = null;
+    let animStartTime = 0;
+    const ANIM_DURATION = 800;
+
+    // ─── Scene Setup ──────────────────────────────────────────────
     const bgColor = 0xF5F3ED;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(bgColor);
@@ -595,8 +854,8 @@
     controls.dampingFactor = 0.05;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.3;
-    controls.maxPolarAngle = Math.PI / 2; // Prevent rotating below horizontal
-    controls.minPolarAngle = 0; // Allow looking straight down from above
+    controls.maxPolarAngle = Math.PI / 2;
+    controls.minPolarAngle = 0;
 
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
@@ -607,85 +866,148 @@
     light2.position.set(-60, -30, -60);
     scene.add(light2);
 
-    // ─── Base Platform ───────────────────────────────────────────────
-    const platformGeometry = new THREE.CylinderGeometry(50, 50, 2, 64);
-    const platformMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe8e6dc, // Slightly darker cream than background
-        metalness: 0.0,
-        roughness: 0.8,
-        flatShading: false
-    });
-    const platform = new THREE.Mesh(platformGeometry, platformMaterial);
-    platform.position.y = -36; // Position below point cloud
+    // Base Platform
+    const platformGeo = new THREE.CylinderGeometry(50, 50, 2, 64);
+    const platformMat = new THREE.MeshStandardMaterial({ color: 0xe8e6dc, metalness: 0, roughness: 0.8 });
+    const platform = new THREE.Mesh(platformGeo, platformMat);
+    platform.position.y = -36;
     scene.add(platform);
 
-    // Platform edge ring for definition
-    const edgeGeometry = new THREE.TorusGeometry(50, 0.3, 16, 64);
-    const edgeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xd4d2c8, // Subtle darker edge
-        metalness: 0.0,
-        roughness: 0.9
-    });
-    const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    const edgeGeo = new THREE.TorusGeometry(50, 0.3, 16, 64);
+    const edgeMat = new THREE.MeshStandardMaterial({ color: 0xd4d2c8, metalness: 0, roughness: 0.9 });
+    const edge = new THREE.Mesh(edgeGeo, edgeMat);
     edge.position.y = -35;
     edge.rotation.x = Math.PI / 2;
     scene.add(edge);
 
-    // ─── Color Functions ─────────────────────────────────────────────
+    // ─── Color Functions ──────────────────────────────────────────
     const clusterColors = [
-        [0.18, 0.42, 0.31],  // Cluster 0: deep teal-green
+        [0.18, 0.42, 0.31],  // Cluster 0: teal-green
         [0.55, 0.27, 0.07],  // Cluster 1: warm brown
-        [0.40, 0.30, 0.55],  // Cluster -1: muted purple (outliers)
+        [0.40, 0.30, 0.55],  // Cluster -1: muted purple
     ];
+    const SEARCH_HIGHLIGHT = [0.95, 0.80, 0.15]; // Gold
 
     function getTcColor(tc) {
-        const t = (tc - tcMin) / (tcMax - tcMin);
-        return [
-            0.65 - t * 0.45,  // R: 0.65 → 0.20
-            0.30 + t * 0.25,  // G: 0.30 → 0.55
-            0.25 + t * 0.40   // B: 0.25 → 0.65
-        ];
+        const range = dataRanges.tc;
+        const t = range ? (tc - range.min) / (range.max - range.min) : 0;
+        return [0.65 - t * 0.45, 0.30 + t * 0.25, 0.25 + t * 0.40];
     }
 
     function getClusterColor(cluster) {
         if (cluster === 0) return clusterColors[0];
         if (cluster === 1) return clusterColors[1];
-        return clusterColors[2]; // -1 / outliers
+        return clusterColors[2];
     }
 
     function getClusterHex(cluster) {
         const c = getClusterColor(cluster);
-        const r = Math.round(c[0] * 255);
-        const g = Math.round(c[1] * 255);
-        const b = Math.round(c[2] * 255);
-        return `rgb(${r},${g},${b})`;
+        return `rgb(${Math.round(c[0]*255)},${Math.round(c[1]*255)},${Math.round(c[2]*255)})`;
     }
 
-    // ─── Coordinate Mapping ──────────────────────────────────────────
+    // ─── Axis Mapping ─────────────────────────────────────────────
+    function getAxisValue(m, axis) {
+        const opt = AXIS_OPTIONS[axis];
+        return opt ? opt.get(m) : 0;
+    }
+
+    function computeRange(materials, axis) {
+        const vals = materials.map(m => getAxisValue(m, axis));
+        return { min: Math.min(...vals), max: Math.max(...vals) };
+    }
+
+    function computeAllRanges() {
+        dataRanges = {};
+        for (const key of Object.keys(AXIS_OPTIONS)) {
+            dataRanges[key] = computeRange(allMaterials, key);
+        }
+        // Also compute global tc range
+        dataRanges.tc = computeRange(allMaterials, 'tc');
+    }
+
+    function normalizeValue(val, range) {
+        if (!range || range.max === range.min) return 0;
+        return ((val - range.min) / (range.max - range.min) - 0.5) * 60;
+    }
+
     function toSceneCoords(m) {
         return {
-            x: ((m.x - xMin) / (xMax - xMin) - 0.5) * 60,
-            y: ((m.tc - tcMin) / (tcMax - tcMin) - 0.5) * 60,
-            z: ((m.y - yMin) / (yMax - yMin) - 0.5) * 60
+            x: normalizeValue(getAxisValue(m, axisConfig.x), dataRanges[axisConfig.x]),
+            y: normalizeValue(getAxisValue(m, axisConfig.y), dataRanges[axisConfig.y]),
+            z: normalizeValue(getAxisValue(m, axisConfig.z), dataRanges[axisConfig.z]),
         };
     }
 
-    // Map sparse region (which uses PCA x,y) to scene coords
     function regionToScene(r) {
-        // Sparse regions use same x,y as material PCA coords
-        // tc (height) we place at the bottom of the scene to show they're unexplored
         return {
-            x: ((r.x - xMin) / (xMax - xMin) - 0.5) * 60,
-            y: -30 + Math.random() * 5, // near bottom
-            z: ((r.y - yMin) / (yMax - yMin) - 0.5) * 60
+            x: normalizeValue(r.x, dataRanges.pca1),
+            y: -30 + Math.random() * 5,
+            z: normalizeValue(r.y, dataRanges.pca2),
         };
     }
 
-    // ─── Build Point Cloud ───────────────────────────────────────────
+    // ─── Filtering ────────────────────────────────────────────────
+    function applyFilters() {
+        visibleMaterials = allMaterials.filter(m => {
+            if (m.tc < filters.tcMin || m.tc > filters.tcMax) return false;
+            if (!filters.clusters.has(m.cluster)) return false;
+            if (m.atomic_mass < filters.massMin || m.atomic_mass > filters.massMax) return false;
+            if (m.valence < filters.valenceMin || m.valence > filters.valenceMax) return false;
+            if (filters.elements.length > 0) {
+                const elems = m.elements || [];
+                if (!filters.elements.every(e => elems.includes(e))) return false;
+            }
+            return true;
+        });
+
+        sortedByTc = [...visibleMaterials].sort((a, b) => b.tc - a.tc);
+        buildPointCloud(visibleMaterials);
+        populateMaterials(materialCount);
+        populateClusters(visibleMaterials);
+        updateStatsBar();
+        updateFilterBadge();
+    }
+
+    function updateFilterBadge() {
+        let count = 0;
+        if (filters.tcMin > 0 || filters.tcMax < 185) count++;
+        if (filters.elements.length > 0) count++;
+        if (filters.clusters.size < 3) count++;
+        if (filters.massMin > 0 || filters.massMax < 300) count++;
+        if (filters.valenceMin > 0 || filters.valenceMax < 8) count++;
+
+        const badge = document.getElementById('filter-badge');
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function updateStatsBar() {
+        const mats = visibleMaterials;
+        document.getElementById('stat-materials').textContent = mats.length.toLocaleString();
+        const clusters = new Set(mats.map(m => m.cluster)).size;
+        document.getElementById('stat-clusters').textContent = clusters;
+        if (mats.length > 0) {
+            const avgTc = (mats.reduce((s, m) => s + m.tc, 0) / mats.length).toFixed(1);
+            const maxTc = Math.max(...mats.map(m => m.tc)).toFixed(1);
+            document.getElementById('stat-avg-tc').textContent = avgTc + 'K';
+            document.getElementById('stat-max-tc').textContent = maxTc + 'K';
+        } else {
+            document.getElementById('stat-avg-tc').textContent = '—';
+            document.getElementById('stat-max-tc').textContent = '—';
+        }
+    }
+
+    // ─── Build Point Cloud ────────────────────────────────────────
     function buildPointCloud(materials) {
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(materials.length * 3);
         const colors = new Float32Array(materials.length * 3);
+
+        const searchElements = getSearchElements();
 
         materials.forEach((m, i) => {
             const p = toSceneCoords(m);
@@ -693,7 +1015,12 @@
             positions[i * 3 + 1] = p.y;
             positions[i * 3 + 2] = p.z;
 
-            const c = colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
+            let c;
+            if (searchElements.length > 0 && m.elements && searchElements.every(e => m.elements.includes(e))) {
+                c = SEARCH_HIGHLIGHT;
+            } else {
+                c = colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
+            }
             colors[i * 3] = c[0];
             colors[i * 3 + 1] = c[1];
             colors[i * 3 + 2] = c[2];
@@ -715,52 +1042,74 @@
         scene.add(pointCloud);
     }
 
-    // ─── Build Region Markers ────────────────────────────────────────
+    // ─── Axis Transition Animation ────────────────────────────────
+    function animateAxisTransition(newConfig) {
+        if (!pointCloud || !visibleMaterials.length) {
+            axisConfig = newConfig;
+            buildPointCloud(visibleMaterials);
+            return;
+        }
+
+        const positions = pointCloud.geometry.attributes.position.array;
+        animStartPositions = new Float32Array(positions);
+
+        axisConfig = newConfig;
+        animTargetPositions = new Float32Array(visibleMaterials.length * 3);
+        visibleMaterials.forEach((m, i) => {
+            const p = toSceneCoords(m);
+            animTargetPositions[i * 3] = p.x;
+            animTargetPositions[i * 3 + 1] = p.y;
+            animTargetPositions[i * 3 + 2] = p.z;
+        });
+
+        animStartTime = performance.now();
+        animatingAxes = true;
+    }
+
+    function updateAxisAnimation(now) {
+        if (!animatingAxes) return;
+        let t = (now - animStartTime) / ANIM_DURATION;
+        if (t >= 1) {
+            t = 1;
+            animatingAxes = false;
+        }
+        // Ease in-out
+        t = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        const positions = pointCloud.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i++) {
+            positions[i] = animStartPositions[i] + (animTargetPositions[i] - animStartPositions[i]) * t;
+        }
+        pointCloud.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // ─── Region Markers ───────────────────────────────────────────
     function buildRegionMarkers(regions) {
-        // Remove old markers
         regionMeshes.forEach(m => scene.remove(m));
         regionMeshes = [];
 
         regions.forEach((r, i) => {
             const pos = regionToScene(r);
-            // Translucent sphere at region location
-            const geo = new THREE.SphereGeometry(2.5 - r.density * 0.3, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({
-                color: 0x2d6a4f,
-                transparent: true,
-                opacity: 0.15,
-                wireframe: false
-            });
+            const radius = 2.5 - Math.min(r.density, 5) * 0.3;
+            const geo = new THREE.SphereGeometry(radius, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x2d6a4f, transparent: true, opacity: 0.15 });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(pos.x, pos.y, pos.z);
             mesh.userData = { regionIndex: i };
 
-            // Wire outline
-            const wireGeo = new THREE.SphereGeometry(2.5 - r.density * 0.3, 12, 12);
-            const wireMat = new THREE.MeshBasicMaterial({
-                color: 0x2d6a4f,
-                transparent: true,
-                opacity: 0.3,
-                wireframe: true
-            });
+            const wireGeo = new THREE.SphereGeometry(radius, 12, 12);
+            const wireMat = new THREE.MeshBasicMaterial({ color: 0x2d6a4f, transparent: true, opacity: 0.3, wireframe: true });
             const wire = new THREE.Mesh(wireGeo, wireMat);
             wire.position.copy(mesh.position);
 
-            // Vertical line from region up through the Tc axis
             const lineGeo = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(pos.x, pos.y, pos.z),
                 new THREE.Vector3(pos.x, pos.y + 40, pos.z)
             ]);
-            const lineMat = new THREE.LineBasicMaterial({
-                color: 0x2d6a4f,
-                transparent: true,
-                opacity: 0.12
-            });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x2d6a4f, transparent: true, opacity: 0.12 });
             const line = new THREE.Line(lineGeo, lineMat);
 
-            scene.add(mesh);
-            scene.add(wire);
-            scene.add(line);
+            scene.add(mesh); scene.add(wire); scene.add(line);
             regionMeshes.push(mesh, wire, line);
         });
     }
@@ -769,43 +1118,53 @@
         regionMeshes.forEach(m => { m.visible = visible; });
     }
 
-    // ─── Populate Panels ─────────────────────────────────────────────
+    // ─── Populate Panels ──────────────────────────────────────────
     function populateRegions(regions) {
         const body = document.getElementById('body-regions');
         if (regions.length === 0) {
-            body.innerHTML = '<div style="color:#999;">No sparse regions in this dataset sample.</div>';
+            body.innerHTML = '<div style="color:#999;">No sparse regions found.</div>';
             return;
         }
 
-        // Sort by density (lower = more sparse = higher priority)
-        const sorted = regions.map((r, i) => ({ ...r, originalIndex: i }))
-            .sort((a, b) => a.density - b.density);
+        body.innerHTML = regions.slice(0, 15).map((r, i) => {
+            const priority = (r.score || 0) >= 6 ? 'high' : 'med';
+            const bd = r.score_breakdown || {};
+            const total = (bd.sparseness || 0) + (bd.tc_proximity || 0) + (bd.novelty || 0) + (bd.feasibility || 0);
 
-        // Find nearby materials for context
-        body.innerHTML = sorted.map((r, i) => {
-            const priority = r.density <= 1 ? 'high' : 'med';
-            const nearbyMats = allMaterials.filter(m => {
-                const dx = m.x - r.x;
-                const dy = m.y - r.y;
-                return Math.sqrt(dx * dx + dy * dy) < 2.0;
-            });
-            const nearbyMaxTc = nearbyMats.length > 0
-                ? Math.max(...nearbyMats.map(m => m.tc)).toFixed(1)
-                : '?';
-            const avgMass = nearbyMats.length > 0
-                ? (nearbyMats.reduce((s, m) => s + m.atomic_mass, 0) / nearbyMats.length).toFixed(1)
-                : '?';
+            let barsHtml = '';
+            let legendHtml = '';
+            if (total > 0) {
+                const pct = (v) => ((v / total) * 100).toFixed(1) + '%';
+                barsHtml = `<div class="score-bars">
+                    <div class="score-bar sparseness" style="width:${pct(bd.sparseness)}" title="Sparseness: ${bd.sparseness}%"></div>
+                    <div class="score-bar tc-proximity" style="width:${pct(bd.tc_proximity)}" title="Tc Proximity: ${bd.tc_proximity}%"></div>
+                    <div class="score-bar novelty" style="width:${pct(bd.novelty)}" title="Novelty: ${bd.novelty}%"></div>
+                    <div class="score-bar feasibility" style="width:${pct(bd.feasibility)}" title="Feasibility: ${bd.feasibility}%"></div>
+                </div>
+                <div class="score-legend">
+                    <span class="score-legend-item"><span class="score-legend-dot" style="background:#2d6a4f"></span>Sparse</span>
+                    <span class="score-legend-item"><span class="score-legend-dot" style="background:#7b2d8b"></span>Tc Prox</span>
+                    <span class="score-legend-item"><span class="score-legend-dot" style="background:#2d5fa1"></span>Novel</span>
+                    <span class="score-legend-item"><span class="score-legend-dot" style="background:#c97b2d"></span>Feasible</span>
+                </div>`;
+            }
 
-            const reason = r.density <= 1
-                ? `Lowest density zone — highest synthesis priority`
-                : `Adjacent to materials with Tc up to ${nearbyMaxTc}K`;
+            let neighborsHtml = '';
+            if (r.nearest_materials && r.nearest_materials.length) {
+                neighborsHtml = `<div class="region-neighbors">` +
+                    r.nearest_materials.slice(0, 3).map(n =>
+                        `<div class="region-neighbor">${n.formula} (${n.tc}K)</div>`
+                    ).join('') + `</div>`;
+            }
 
-            return `<div class="region-item" data-region="${r.originalIndex}">
+            return `<div class="region-item" data-region="${i}">
                 <span class="region-rank priority-${priority}">${i + 1}</span>
                 <strong>Region ${i + 1}</strong>
-                <div class="region-coords">PCA: (${r.x.toFixed(2)}, ${r.y.toFixed(2)}) · density: ${r.density}</div>
-                <div class="region-reason">${reason}</div>
-                <div class="region-coords">Nearby avg mass: ${avgMass} · Nearby max Tc: ${nearbyMaxTc}K</div>
+                ${r.score ? `<span class="region-score">Score: ${r.score}/10</span>` : ''}
+                <div class="region-coords">PCA: (${r.x.toFixed(2)}, ${r.y.toFixed(2)}) &middot; density: ${r.density}</div>
+                ${r.avg_neighbor_tc ? `<div class="region-coords">Avg neighbor Tc: ${r.avg_neighbor_tc}K</div>` : ''}
+                ${barsHtml}
+                ${neighborsHtml}
             </div>`;
         }).join('');
     }
@@ -815,11 +1174,12 @@
         const top = sortedByTc.slice(0, count);
 
         body.innerHTML = top.map((m, i) => {
-            return `<div class="material-item" data-index="${allMaterials.indexOf(m)}">
+            const globalIndex = visibleMaterials.indexOf(m);
+            return `<div class="material-item" data-index="${globalIndex}">
                 <span class="mat-rank">${i + 1}</span>
                 <div class="mat-info">
-                    <div>Mass: ${m.atomic_mass.toFixed(1)} · Radius: ${m.atomic_radius.toFixed(0)}pm</div>
-                    <div class="mat-props">Valence: ${m.valence.toFixed(2)} · Cluster ${m.cluster}</div>
+                    <div class="mat-formula">${m.formula || 'Unknown'}</div>
+                    <div class="mat-props">Mass: ${m.atomic_mass.toFixed(1)} &middot; Val: ${m.valence.toFixed(2)} &middot; Cluster ${m.cluster}</div>
                 </div>
                 <span class="mat-tc">${m.tc}K</span>
             </div>`;
@@ -842,7 +1202,6 @@
             const tcs = mats.map(m => m.tc);
             const avgTc = (tcs.reduce((s, v) => s + v, 0) / tcs.length).toFixed(1);
             const maxTc = Math.max(...tcs).toFixed(1);
-            const minTc = Math.min(...tcs).toFixed(4);
             const avgMass = (mats.reduce((s, m) => s + m.atomic_mass, 0) / mats.length).toFixed(1);
             const avgValence = (mats.reduce((s, m) => s + m.valence, 0) / mats.length).toFixed(2);
             const pct = ((mats.length / total) * 100).toFixed(1);
@@ -853,29 +1212,570 @@
                 <div class="cluster-dot" style="background:${color}"></div>
                 <div class="cluster-info">
                     <div class="cluster-name">${clusterNames[cid] || 'Cluster ' + cid}</div>
-                    <div class="cluster-stats">${mats.length.toLocaleString()} materials (${pct}%) · Avg Tc: ${avgTc}K · Max: ${maxTc}K</div>
-                    <div class="cluster-stats">Avg mass: ${avgMass} · Avg valence: ${avgValence}</div>
+                    <div class="cluster-stats">${mats.length.toLocaleString()} materials (${pct}%) &middot; Avg Tc: ${avgTc}K &middot; Max: ${maxTc}K</div>
+                    <div class="cluster-stats">Avg mass: ${avgMass} &middot; Avg valence: ${avgValence}</div>
                     <div class="cluster-bar"><div class="cluster-bar-fill" style="width:${barWidth}%;background:${color}"></div></div>
                 </div>
             </div>`;
         }).join('');
     }
 
-    // ─── Interaction: Focus on Region ────────────────────────────────
+    // ─── Detail Panel ─────────────────────────────────────────────
+    function openDetailPanel(materialIndex) {
+        const m = visibleMaterials[materialIndex];
+        if (!m) return;
+        selectedMaterialIndex = materialIndex;
+
+        const isPinned = hypothesisBoard.some(h => h.formula_raw === m.formula_raw);
+
+        let html = `
+            <div class="detail-formula">${m.formula || 'Unknown'}</div>
+            <div class="detail-tc">Tc: ${m.tc}K</div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Identity</div>
+                <div class="detail-row"><span class="detail-row-label">Formula</span><span class="detail-row-value">${m.formula_raw || '—'}</span></div>
+                <div class="detail-row"><span class="detail-row-label">Elements</span></div>
+                <div class="detail-elements">
+                    ${(m.elements || []).map(e => `<span class="detail-element">${e}</span>`).join('')}
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Thermal</div>
+                <div class="detail-row"><span class="detail-row-label">Critical Temp</span><span class="detail-row-value">${m.tc}K</span></div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Composition</div>
+                <div class="detail-row"><span class="detail-row-label">Atomic Mass</span><span class="detail-row-value">${m.atomic_mass.toFixed(2)}</span></div>
+                <div class="detail-row"><span class="detail-row-label">Atomic Radius</span><span class="detail-row-value">${m.atomic_radius.toFixed(1)} pm</span></div>
+                <div class="detail-row"><span class="detail-row-label">Valence</span><span class="detail-row-value">${m.valence.toFixed(2)}</span></div>
+                <div class="detail-row"><span class="detail-row-label">Density</span><span class="detail-row-value">${(m.density || 0).toFixed(1)}</span></div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Clustering</div>
+                <div class="detail-row"><span class="detail-row-label">Cluster</span><span class="detail-row-value">${m.cluster}</span></div>
+                <div class="detail-row"><span class="detail-row-label">PCA</span><span class="detail-row-value">(${m.x.toFixed(3)}, ${m.y.toFixed(3)})</span></div>
+                <div class="detail-row"><span class="detail-row-label">UMAP</span><span class="detail-row-value">(${(m.umap_x||0).toFixed(3)}, ${(m.umap_y||0).toFixed(3)})</span></div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="detail-btn primary" id="btn-find-similar">Find Similar</button>
+                <button class="detail-btn" id="btn-copy-vector">Copy Feature Vector</button>
+                <button class="detail-btn" id="btn-pin-material">${isPinned ? 'Unpin' : 'Pin to Board'}</button>
+                <button class="detail-btn" id="btn-ai-explain">Why is this interesting?</button>
+            </div>
+
+            <div id="detail-ai-response"></div>
+            <div id="detail-neighbors"></div>
+        `;
+
+        document.getElementById('detail-content').innerHTML = html;
+        document.getElementById('detail-panel').classList.add('open');
+
+        // Find Similar
+        document.getElementById('btn-find-similar').addEventListener('click', () => {
+            findSimilar(materialIndex);
+        });
+
+        // Copy Feature Vector
+        document.getElementById('btn-copy-vector').addEventListener('click', () => {
+            const vec = {
+                formula: m.formula_raw,
+                tc: m.tc,
+                atomic_mass: m.atomic_mass,
+                atomic_radius: m.atomic_radius,
+                valence: m.valence,
+                density: m.density,
+                cluster: m.cluster,
+                pca: [m.x, m.y],
+                umap: [m.umap_x, m.umap_y],
+                elements: m.elements,
+            };
+            navigator.clipboard.writeText(JSON.stringify(vec, null, 2));
+            const btn = document.getElementById('btn-copy-vector');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy Feature Vector'; }, 1500);
+        });
+
+        // Pin
+        document.getElementById('btn-pin-material').addEventListener('click', () => {
+            togglePin(m);
+        });
+
+        // AI Explainer
+        document.getElementById('btn-ai-explain').addEventListener('click', () => {
+            aiExplain(m);
+        });
+    }
+
+    // ─── AI Explainer ───────────────────────────────────────────
+    function getApiKey() {
+        let key = localStorage.getItem('supersearch_api_key');
+        if (!key) {
+            key = prompt('Enter your Anthropic API key for AI analysis.\nThis is stored locally in your browser and never sent anywhere except the Anthropic API.\n\nGet a key at console.anthropic.com');
+            if (key) localStorage.setItem('supersearch_api_key', key.trim());
+        }
+        return key ? key.trim() : null;
+    }
+
+    async function aiExplain(m) {
+        const responseDiv = document.getElementById('detail-ai-response');
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            responseDiv.innerHTML = '<div class="ai-explainer error">API key required. Reload and try again.</div>';
+            return;
+        }
+
+        responseDiv.innerHTML = '<div class="ai-explainer loading">Analyzing material with Claude...</div>';
+
+        // Find 5 nearest neighbors for context
+        const distances = visibleMaterials.map((other, i) => {
+            const dx = m.x - other.x;
+            const dy = m.y - other.y;
+            return { dist: Math.sqrt(dx*dx + dy*dy), material: other };
+        });
+        distances.sort((a, b) => a.dist - b.dist);
+        const neighbors = distances.slice(1, 6);
+
+        const neighborsStr = neighbors.map(n =>
+            `${n.material.formula_raw || 'Unknown'} (Tc=${n.material.tc}K)`
+        ).join(', ');
+
+        const clusterMats = visibleMaterials.filter(o => o.cluster === m.cluster);
+        const clusterAvgTc = (clusterMats.reduce((s, o) => s + o.tc, 0) / clusterMats.length).toFixed(1);
+
+        const prompt = `You are a materials science research assistant. Analyze this superconductor:
+
+Material: ${m.formula_raw || 'Unknown'}
+Critical Temperature: ${m.tc}K
+Elements: ${(m.elements || []).join(', ')}
+Atomic Mass: ${m.atomic_mass.toFixed(2)}
+Atomic Radius: ${m.atomic_radius.toFixed(1)} pm
+Valence: ${m.valence.toFixed(2)}
+Cluster: ${m.cluster} (avg Tc in cluster: ${clusterAvgTc}K, ${clusterMats.length} materials)
+Nearby materials: ${neighborsStr}
+
+Provide a 2-3 sentence scientific rationale about this material's significance as a superconductor. Focus on: composition space position, proximity to high-Tc materials, and relevant superconducting physics (e.g., cuprate physics, valence, doping). Be specific and technically accurate. Use plain scientific language.`;
+
+        try {
+            const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true',
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 300,
+                    messages: [{ role: 'user', content: prompt }],
+                }),
+            });
+
+            if (!resp.ok) {
+                const errText = await resp.text();
+                throw new Error(`API error ${resp.status}: ${errText.slice(0, 100)}`);
+            }
+
+            const data = await resp.json();
+            const text = data.content && data.content[0] ? data.content[0].text : 'No response.';
+            responseDiv.innerHTML = `<div class="ai-explainer">${text}</div>`;
+        } catch (err) {
+            responseDiv.innerHTML = `<div class="ai-explainer error">Error: ${err.message}</div>`;
+            if (err.message.includes('401') || err.message.includes('invalid')) {
+                localStorage.removeItem('supersearch_api_key');
+            }
+        }
+    }
+
+    function closeDetailPanel() {
+        document.getElementById('detail-panel').classList.remove('open');
+        clearNeighborHighlights();
+        selectedMaterialIndex = -1;
+    }
+
+    function findSimilar(idx) {
+        const m = visibleMaterials[idx];
+        if (!m) return;
+
+        // Euclidean distance in PCA + UMAP + normalized features
+        const distances = visibleMaterials.map((other, i) => {
+            const dx = m.x - other.x;
+            const dy = m.y - other.y;
+            const dt = (m.tc - other.tc) / 185;
+            const dm = (m.atomic_mass - other.atomic_mass) / 300;
+            const dv = (m.valence - other.valence) / 8;
+            return { index: i, dist: Math.sqrt(dx*dx + dy*dy + dt*dt + dm*dm + dv*dv), material: other };
+        });
+
+        distances.sort((a, b) => a.dist - b.dist);
+        const nearest = distances.slice(1, 11); // skip self
+
+        // Show in detail panel
+        const neighborsDiv = document.getElementById('detail-neighbors');
+        neighborsDiv.innerHTML = `
+            <div class="detail-section" style="margin-top:12px;">
+                <div class="detail-section-title">10 Nearest Neighbors</div>
+                ${nearest.map((n, i) => `
+                    <div class="material-item" data-index="${n.index}" style="cursor:pointer;">
+                        <span class="mat-rank">${i+1}</span>
+                        <div class="mat-info">
+                            <div class="mat-formula">${n.material.formula || 'Unknown'}</div>
+                            <div class="mat-props">${n.material.elements ? n.material.elements.join(', ') : ''}</div>
+                        </div>
+                        <span class="mat-tc">${n.material.tc}K</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Highlight in 3D
+        highlightNeighbors([idx, ...nearest.map(n => n.index)]);
+    }
+
+    function highlightNeighbors(indices) {
+        clearNeighborHighlights();
+        if (!pointCloud) return;
+
+        const colors = pointCloud.geometry.attributes.color;
+        indices.forEach((idx, i) => {
+            const origR = colors.getX(idx);
+            const origG = colors.getY(idx);
+            const origB = colors.getZ(idx);
+            neighborHighlights.push({ idx, r: origR, g: origG, b: origB });
+
+            if (i === 0) {
+                colors.setXYZ(idx, 1.0, 0.2, 0.2); // Red for selected
+            } else {
+                colors.setXYZ(idx, 0.95, 0.80, 0.15); // Gold for neighbors
+            }
+        });
+        colors.needsUpdate = true;
+    }
+
+    function clearNeighborHighlights() {
+        if (!pointCloud || !neighborHighlights.length) return;
+        const colors = pointCloud.geometry.attributes.color;
+        neighborHighlights.forEach(h => {
+            colors.setXYZ(h.idx, h.r, h.g, h.b);
+        });
+        colors.needsUpdate = true;
+        neighborHighlights = [];
+    }
+
+    // ─── Hypothesis Board ─────────────────────────────────────────
+    function togglePin(m) {
+        const idx = hypothesisBoard.findIndex(h => h.formula_raw === m.formula_raw);
+        if (idx >= 0) {
+            hypothesisBoard.splice(idx, 1);
+        } else {
+            hypothesisBoard.push({
+                formula: m.formula,
+                formula_raw: m.formula_raw,
+                tc: m.tc,
+                elements: m.elements,
+                atomic_mass: m.atomic_mass,
+                valence: m.valence,
+            });
+        }
+        updateHypothesisPanel();
+        updateURL();
+    }
+
+    function updateHypothesisPanel() {
+        const panel = document.getElementById('hypothesis-panel');
+        const list = document.getElementById('hypothesis-list');
+        const count = document.getElementById('hyp-count');
+
+        if (hypothesisBoard.length === 0) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        panel.style.display = '';
+        count.textContent = hypothesisBoard.length;
+
+        list.innerHTML = hypothesisBoard.map((h, i) => `
+            <div class="hyp-item">
+                <span class="hyp-remove" data-index="${i}">&times;</span>
+                <span class="hyp-formula">${h.formula}</span>
+                <span class="hyp-tc">${h.tc}K</span>
+            </div>
+        `).join('');
+
+        list.querySelectorAll('.hyp-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                hypothesisBoard.splice(parseInt(e.target.dataset.index), 1);
+                updateHypothesisPanel();
+                updateURL();
+            });
+        });
+    }
+
+    function exportCSV() {
+        if (!hypothesisBoard.length) return;
+        const header = 'formula,tc,atomic_mass,valence,elements\n';
+        const rows = hypothesisBoard.map(h =>
+            `"${h.formula_raw}",${h.tc},${h.atomic_mass},${h.valence},"${(h.elements||[]).join(';')}"`
+        ).join('\n');
+        const blob = new Blob([header + rows], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'supersearch_hypotheses.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ─── Element Search ───────────────────────────────────────────
+    function getSearchElements() {
+        const input = document.getElementById('search-input');
+        if (!input) return [];
+        const val = input.value.trim();
+        if (!val) return [];
+        return val.split(/[,\s]+/).map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    function doSearch() {
+        const elements = getSearchElements();
+        const clearBtn = document.getElementById('search-clear');
+        const countSpan = document.getElementById('search-count');
+
+        if (elements.length === 0) {
+            clearBtn.style.display = 'none';
+            countSpan.textContent = '';
+            buildPointCloud(visibleMaterials);
+            return;
+        }
+
+        clearBtn.style.display = '';
+        const matches = visibleMaterials.filter(m =>
+            m.elements && elements.every(e => m.elements.includes(e))
+        );
+        countSpan.textContent = `${matches.length} matching`;
+        buildPointCloud(visibleMaterials);
+    }
+
+    // ─── URL State ────────────────────────────────────────────────
+    let urlDebounce = null;
+    function updateURL() {
+        clearTimeout(urlDebounce);
+        urlDebounce = setTimeout(() => {
+            const params = new URLSearchParams();
+            if (filters.tcMin > 0 || filters.tcMax < 185)
+                params.set('tc', `${filters.tcMin}-${filters.tcMax}`);
+            if (filters.elements.length)
+                params.set('elements', filters.elements.join(','));
+            if (axisConfig.x !== 'pca1' || axisConfig.z !== 'pca2')
+                params.set('view', `${axisConfig.x},${axisConfig.y},${axisConfig.z}`);
+            if (hypothesisBoard.length)
+                params.set('pinned', hypothesisBoard.map(h => h.formula_raw).join('|'));
+            const hash = params.toString();
+            if (hash) {
+                history.replaceState(null, '', '#' + hash);
+            } else {
+                history.replaceState(null, '', location.pathname);
+            }
+        }, 500);
+    }
+
+    function restoreFromURL() {
+        const hash = location.hash.slice(1);
+        if (!hash) return;
+        const params = new URLSearchParams(hash);
+
+        if (params.has('tc')) {
+            const [min, max] = params.get('tc').split('-').map(Number);
+            if (!isNaN(min)) { filters.tcMin = min; document.getElementById('tc-min').value = min; }
+            if (!isNaN(max)) { filters.tcMax = max; document.getElementById('tc-max').value = max; }
+        }
+        if (params.has('elements')) {
+            filters.elements = params.get('elements').split(',').filter(Boolean);
+            renderElementTags();
+        }
+        if (params.has('view')) {
+            const [x, y, z] = params.get('view').split(',');
+            if (x && AXIS_OPTIONS[x]) axisConfig.x = x;
+            if (y && AXIS_OPTIONS[y]) axisConfig.y = y;
+            if (z && AXIS_OPTIONS[z]) axisConfig.z = z;
+        }
+        if (params.has('pinned')) {
+            const formulas = params.get('pinned').split('|');
+            formulas.forEach(f => {
+                const m = allMaterials.find(m => m.formula_raw === f);
+                if (m) {
+                    hypothesisBoard.push({
+                        formula: m.formula, formula_raw: m.formula_raw,
+                        tc: m.tc, elements: m.elements,
+                        atomic_mass: m.atomic_mass, valence: m.valence,
+                    });
+                }
+            });
+            updateHypothesisPanel();
+        }
+    }
+
+    function copyShareLink() {
+        updateURL();
+        setTimeout(() => {
+            navigator.clipboard.writeText(location.href);
+            const toast = document.getElementById('share-toast');
+            toast.style.display = '';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }, 600);
+    }
+
+    // ─── Periodic Table ───────────────────────────────────────────
+    const PT_LAYOUT = [
+        // [row, col, atomicNumber, symbol]
+        [0,0,1,'H'],[0,17,2,'He'],
+        [1,0,3,'Li'],[1,1,4,'Be'],[1,12,5,'B'],[1,13,6,'C'],[1,14,7,'N'],[1,15,8,'O'],[1,16,9,'F'],[1,17,10,'Ne'],
+        [2,0,11,'Na'],[2,1,12,'Mg'],[2,12,13,'Al'],[2,13,14,'Si'],[2,14,15,'P'],[2,15,16,'S'],[2,16,17,'Cl'],[2,17,18,'Ar'],
+        [3,0,19,'K'],[3,1,20,'Ca'],[3,2,21,'Sc'],[3,3,22,'Ti'],[3,4,23,'V'],[3,5,24,'Cr'],[3,6,25,'Mn'],[3,7,26,'Fe'],[3,8,27,'Co'],[3,9,28,'Ni'],[3,10,29,'Cu'],[3,11,30,'Zn'],[3,12,31,'Ga'],[3,13,32,'Ge'],[3,14,33,'As'],[3,15,34,'Se'],[3,16,35,'Br'],[3,17,36,'Kr'],
+        [4,0,37,'Rb'],[4,1,38,'Sr'],[4,2,39,'Y'],[4,3,40,'Zr'],[4,4,41,'Nb'],[4,5,42,'Mo'],[4,6,43,'Tc'],[4,7,44,'Ru'],[4,8,45,'Rh'],[4,9,46,'Pd'],[4,10,47,'Ag'],[4,11,48,'Cd'],[4,12,49,'In'],[4,13,50,'Sn'],[4,14,51,'Sb'],[4,15,52,'Te'],[4,16,53,'I'],[4,17,54,'Xe'],
+        [5,0,55,'Cs'],[5,1,56,'Ba'],[5,2,57,'La'],[5,3,72,'Hf'],[5,4,73,'Ta'],[5,5,74,'W'],[5,6,75,'Re'],[5,7,76,'Os'],[5,8,77,'Ir'],[5,9,78,'Pt'],[5,10,79,'Au'],[5,11,80,'Hg'],[5,12,81,'Tl'],[5,13,82,'Pb'],[5,14,83,'Bi'],[5,15,84,'Po'],[5,16,85,'At'],[5,17,86,'Rn'],
+        [7,2,58,'Ce'],[7,3,59,'Pr'],[7,4,60,'Nd'],[7,5,61,'Pm'],[7,6,62,'Sm'],[7,7,63,'Eu'],[7,8,64,'Gd'],[7,9,65,'Tb'],[7,10,66,'Dy'],[7,11,67,'Ho'],[7,12,68,'Er'],[7,13,69,'Tm'],[7,14,70,'Yb'],[7,15,71,'Lu'],
+    ];
+
+    function buildPeriodicTable() {
+        const grid = document.getElementById('periodic-grid');
+        grid.innerHTML = '';
+
+        // Find max high-Tc count for color scaling
+        let maxHighTc = 0;
+        Object.values(elementStats).forEach(s => {
+            if (s.high_tc_count > maxHighTc) maxHighTc = s.high_tc_count;
+        });
+
+        // Create 8x18 grid
+        const cells = {};
+        PT_LAYOUT.forEach(([row, col, num, sym]) => {
+            cells[`${row}-${col}`] = { num, sym };
+        });
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 18; c++) {
+                const cell = document.createElement('div');
+                const data = cells[`${r}-${c}`];
+
+                if (!data) {
+                    cell.className = 'pt-cell empty';
+                    grid.appendChild(cell);
+                    continue;
+                }
+
+                cell.className = 'pt-cell';
+                const stats = elementStats[data.sym];
+                let bg = 'rgba(0,0,0,0.04)';
+                let color = '#999';
+
+                if (stats && stats.high_tc_count > 0) {
+                    const intensity = Math.min(stats.high_tc_count / Math.max(maxHighTc, 1), 1);
+                    const r = Math.round(45 + (1 - intensity) * 200);
+                    const g = Math.round(106 + (1 - intensity) * 140);
+                    const b = Math.round(79 + (1 - intensity) * 170);
+                    bg = `rgb(${r},${g},${b})`;
+                    color = intensity > 0.4 ? '#fff' : '#1a1a1a';
+                }
+
+                cell.style.background = bg;
+                cell.style.color = color;
+
+                let tooltipHtml = '';
+                if (stats) {
+                    const coElems = stats.top_co_elements
+                        ? stats.top_co_elements.slice(0, 3).map(e => e.element).join(', ')
+                        : '';
+                    tooltipHtml = `<div class="pt-tooltip">
+                        <strong>${data.sym}</strong> (Z=${data.num})<br>
+                        Count: ${stats.count} materials<br>
+                        High-Tc (>77K): ${stats.high_tc_count}<br>
+                        Avg Tc: ${stats.avg_tc}K<br>
+                        ${coElems ? 'Common with: ' + coElems : ''}
+                    </div>`;
+                } else {
+                    tooltipHtml = `<div class="pt-tooltip"><strong>${data.sym}</strong> (Z=${data.num})<br>Not found in dataset</div>`;
+                }
+
+                cell.innerHTML = `<span class="pt-number">${data.num}</span><span class="pt-symbol">${data.sym}</span>${tooltipHtml}`;
+                cell.dataset.element = data.sym;
+
+                cell.addEventListener('click', () => {
+                    // Close periodic table and filter by this element
+                    document.getElementById('periodic-overlay').classList.remove('visible');
+                    addElementFilter(data.sym);
+                    applyFilters();
+                    doSearch();
+                });
+
+                grid.appendChild(cell);
+            }
+        }
+    }
+
+    // ─── Onboarding Tour ──────────────────────────────────────────
+    const tourSteps = [
+        {
+            title: 'Welcome to SuperSearch v2',
+            text: 'These 5,000 points represent known superconductors. Height corresponds to critical temperature (Tc) — the temperature at which each material becomes superconducting.',
+        },
+        {
+            title: 'Composition Families',
+            text: 'Materials are clustered into composition families (colored in cluster mode). The teal-green cluster contains copper-oxide based materials — the current record holders for room-pressure superconductivity.',
+        },
+        {
+            title: 'Opportunity Regions',
+            text: 'The green spheres mark unexplored composition zones — scored by sparseness, proximity to high-Tc materials, novelty, and synthesis feasibility. These are your discovery targets.',
+        },
+        {
+            title: 'Research Tools',
+            text: 'Use the filter panel to narrow by Tc, elements, or properties. Click any point for full details. Search for specific elements. Switch between PCA and UMAP views. Pin materials to your hypothesis board.',
+        },
+    ];
+
+    let tourStep = 0;
+
+    function showTour() {
+        if (localStorage.getItem('supersearch_tour_done') === '1') return;
+        tourStep = 0;
+        renderTourStep();
+        document.getElementById('tour-overlay').classList.add('visible');
+    }
+
+    function renderTourStep() {
+        const step = tourSteps[tourStep];
+        document.getElementById('tour-title').textContent = step.title;
+        document.getElementById('tour-text').textContent = step.text;
+        document.getElementById('tour-next').textContent = tourStep === tourSteps.length - 1 ? 'Start Exploring' : 'Next';
+
+        const dots = document.getElementById('tour-dots');
+        dots.innerHTML = tourSteps.map((_, i) =>
+            `<div class="tour-dot ${i === tourStep ? 'active' : ''}"></div>`
+        ).join('');
+    }
+
+    function closeTour() {
+        document.getElementById('tour-overlay').classList.remove('visible');
+        if (document.getElementById('tour-dont-show').checked) {
+            localStorage.setItem('supersearch_tour_done', '1');
+        }
+    }
+
+    // ─── Interaction Handlers ─────────────────────────────────────
     function focusRegion(index) {
         controls.autoRotate = false;
         const r = sparseRegions[index];
         const pos = regionToScene(r);
-        // Smoothly move camera to look at region
         const target = new THREE.Vector3(pos.x, pos.y, pos.z);
         animateCameraTo(target, 40);
 
-        // Highlight in panel
         document.querySelectorAll('.region-item').forEach(el => el.classList.remove('highlighted'));
         const el = document.querySelector(`.region-item[data-region="${index}"]`);
         if (el) el.classList.add('highlighted');
 
-        // Make sure regions are visible
         if (!showRegions) {
             showRegions = true;
             toggleRegionVisibility(true);
@@ -885,22 +1785,21 @@
 
     function focusMaterial(index) {
         controls.autoRotate = false;
-        const m = allMaterials[index];
+        const m = visibleMaterials[index];
+        if (!m) return;
         const p = toSceneCoords(m);
-        const target = new THREE.Vector3(p.x, p.y, p.z);
-        animateCameraTo(target, 25);
+        animateCameraTo(new THREE.Vector3(p.x, p.y, p.z), 25);
     }
 
     function animateCameraTo(target, distance) {
         controls.target.copy(target);
-        // Move camera to offset from target
         const dir = camera.position.clone().sub(controls.target).normalize();
-        const newPos = target.clone().add(dir.multiplyScalar(distance));
-        camera.position.copy(newPos);
+        camera.position.copy(target.clone().add(dir.multiplyScalar(distance)));
     }
 
-    // ─── Hover Tooltip ───────────────────────────────────────────────
+    // ─── Hover Tooltip ────────────────────────────────────────────
     const tooltip = document.getElementById('tooltip');
+    const ttFormula = tooltip.querySelector('.tt-formula');
     const ttTc = tooltip.querySelector('.tt-tc');
     const ttDetail = tooltip.querySelector('.tt-detail');
 
@@ -917,15 +1816,15 @@
             const idx = intersects[0].index;
             if (idx !== hoveredIndex) {
                 hoveredIndex = idx;
-                const m = allMaterials[idx];
+                const m = visibleMaterials[idx];
+                ttFormula.textContent = m.formula || 'Unknown';
                 ttTc.textContent = `Tc: ${m.tc}K`;
-                ttDetail.innerHTML = `Cluster: ${m.cluster}<br>Atomic mass: ${m.atomic_mass.toFixed(1)}<br>Atomic radius: ${m.atomic_radius.toFixed(0)}pm<br>Valence: ${m.valence.toFixed(2)}<br>PCA: (${m.x.toFixed(2)}, ${m.y.toFixed(2)})`;
+                ttDetail.innerHTML = `${(m.elements||[]).join(', ')}<br>Cluster: ${m.cluster} &middot; Mass: ${m.atomic_mass.toFixed(1)}<br>Radius: ${m.atomic_radius.toFixed(0)}pm &middot; Valence: ${m.valence.toFixed(2)}`;
             }
             tooltip.style.display = 'block';
             tooltip.style.left = (event.clientX + 14) + 'px';
             tooltip.style.top = (event.clientY - 14) + 'px';
 
-            // Keep tooltip in viewport
             const rect = tooltip.getBoundingClientRect();
             if (rect.right > window.innerWidth - 10) {
                 tooltip.style.left = (event.clientX - rect.width - 14) + 'px';
@@ -933,7 +1832,6 @@
             if (rect.bottom > window.innerHeight - 10) {
                 tooltip.style.top = (event.clientY - rect.height - 14) + 'px';
             }
-
             document.body.style.cursor = 'pointer';
         } else {
             tooltip.style.display = 'none';
@@ -943,18 +1841,206 @@
     }
 
     function onClick(event) {
-        // Click-to-zoom disabled per user feedback
-        // Hover tooltips still work
+        if (!pointCloud) return;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(pointCloud);
+        if (intersects.length > 0) {
+            openDetailPanel(intersects[0].index);
+        }
     }
 
     renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-    // Click handler removed - no zoom on click
-    // renderer.domElement.addEventListener('click', onClick, false);
+    renderer.domElement.addEventListener('click', onClick, false);
 
-    // ─── Panel Toggles ───────────────────────────────────────────────
+    // ─── Element Filter Helpers ───────────────────────────────────
+    function addElementFilter(elem) {
+        elem = elem.trim();
+        if (elem && !filters.elements.includes(elem)) {
+            filters.elements.push(elem);
+            renderElementTags();
+            updateURL();
+        }
+    }
+
+    function removeElementFilter(elem) {
+        filters.elements = filters.elements.filter(e => e !== elem);
+        renderElementTags();
+        applyFilters();
+        updateURL();
+    }
+
+    function renderElementTags() {
+        const container = document.getElementById('element-tags');
+        container.innerHTML = filters.elements.map(e =>
+            `<span class="element-tag">${e}<span class="element-tag-remove" data-elem="${e}">&times;</span></span>`
+        ).join('');
+        container.querySelectorAll('.element-tag-remove').forEach(btn => {
+            btn.addEventListener('click', () => removeElementFilter(btn.dataset.elem));
+        });
+    }
+
+    // ─── Filter Panel Event Setup ─────────────────────────────────
+    function setupFilters() {
+        // Tc range slider
+        const tcMin = document.getElementById('tc-min');
+        const tcMax = document.getElementById('tc-max');
+        const tcDisplay = document.getElementById('tc-range-display');
+        const tcFill = document.getElementById('tc-track-fill');
+
+        function updateTcSlider() {
+            const lo = Math.min(+tcMin.value, +tcMax.value);
+            const hi = Math.max(+tcMin.value, +tcMax.value);
+            filters.tcMin = lo; filters.tcMax = hi;
+            tcDisplay.textContent = `${lo} — ${hi}`;
+            const pctLo = (lo / 185) * 100;
+            const pctHi = (hi / 185) * 100;
+            tcFill.style.left = pctLo + '%';
+            tcFill.style.width = (pctHi - pctLo) + '%';
+            applyFilters();
+            updateURL();
+        }
+        tcMin.addEventListener('input', updateTcSlider);
+        tcMax.addEventListener('input', updateTcSlider);
+
+        // Mass range slider
+        const massMin = document.getElementById('mass-min');
+        const massMax = document.getElementById('mass-max');
+        const massDisplay = document.getElementById('mass-range-display');
+        const massFill = document.getElementById('mass-track-fill');
+
+        function updateMassSlider() {
+            const lo = Math.min(+massMin.value, +massMax.value);
+            const hi = Math.max(+massMin.value, +massMax.value);
+            filters.massMin = lo; filters.massMax = hi;
+            massDisplay.textContent = `${lo} — ${hi}`;
+            massFill.style.left = (lo / 300) * 100 + '%';
+            massFill.style.width = ((hi - lo) / 300) * 100 + '%';
+            applyFilters();
+            updateURL();
+        }
+        massMin.addEventListener('input', updateMassSlider);
+        massMax.addEventListener('input', updateMassSlider);
+
+        // Valence range slider
+        const valMin = document.getElementById('valence-min');
+        const valMax = document.getElementById('valence-max');
+        const valDisplay = document.getElementById('valence-range-display');
+        const valFill = document.getElementById('valence-track-fill');
+
+        function updateValenceSlider() {
+            const lo = Math.min(+valMin.value, +valMax.value);
+            const hi = Math.max(+valMin.value, +valMax.value);
+            filters.valenceMin = lo; filters.valenceMax = hi;
+            valDisplay.textContent = `${lo.toFixed(1)} — ${hi.toFixed(1)}`;
+            valFill.style.left = (lo / 8) * 100 + '%';
+            valFill.style.width = ((hi - lo) / 8) * 100 + '%';
+            applyFilters();
+            updateURL();
+        }
+        valMin.addEventListener('input', updateValenceSlider);
+        valMax.addEventListener('input', updateValenceSlider);
+
+        // Element input
+        const elemInput = document.getElementById('element-input');
+        elemInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addElementFilter(elemInput.value);
+                elemInput.value = '';
+                applyFilters();
+            }
+        });
+
+        // Quick filters
+        document.querySelectorAll('.quick-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const isActive = btn.classList.contains('active');
+                // Clear other quick filters
+                document.querySelectorAll('.quick-filter').forEach(b => b.classList.remove('active'));
+
+                if (isActive) {
+                    // Reset
+                    filters.tcMin = 0; filters.tcMax = 185;
+                    filters.elements = [];
+                    tcMin.value = 0; tcMax.value = 185;
+                } else {
+                    btn.classList.add('active');
+                    const f = btn.dataset.filter;
+                    if (f === 'ln2') {
+                        filters.tcMin = 77; filters.tcMax = 185;
+                        tcMin.value = 77; tcMax.value = 185;
+                    } else if (f === 'high-tc') {
+                        filters.tcMin = 100; filters.tcMax = 185;
+                        tcMin.value = 100; tcMax.value = 185;
+                    } else if (f === 'cuprates') {
+                        filters.elements = ['Cu', 'O'];
+                    }
+                }
+
+                renderElementTags();
+                updateTcSlider();
+                applyFilters();
+                updateURL();
+            });
+        });
+
+        // Cluster toggles
+        const clusterContainer = document.getElementById('cluster-toggles');
+        [0, 1, -1].forEach(cid => {
+            const names = { 0: 'Primary Family', 1: 'Secondary Family', '-1': 'Outliers' };
+            const div = document.createElement('label');
+            div.className = 'cluster-toggle';
+            div.innerHTML = `
+                <input type="checkbox" checked data-cluster="${cid}">
+                <span class="cluster-toggle-dot" style="background:${getClusterHex(cid)}"></span>
+                <span class="cluster-toggle-label">${names[cid]}</span>
+            `;
+            clusterContainer.appendChild(div);
+
+            div.querySelector('input').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    filters.clusters.add(cid);
+                } else {
+                    filters.clusters.delete(cid);
+                }
+                applyFilters();
+                updateURL();
+            });
+        });
+
+        // Clear all filters
+        document.getElementById('btn-clear-filters').addEventListener('click', () => {
+            filters = {
+                tcMin: 0, tcMax: 185,
+                elements: [],
+                clusters: new Set([0, 1, -1]),
+                massMin: 0, massMax: 300,
+                valenceMin: 0, valenceMax: 8,
+            };
+            tcMin.value = 0; tcMax.value = 185;
+            massMin.value = 0; massMax.value = 300;
+            valMin.value = 0; valMax.value = 8;
+            document.querySelectorAll('.quick-filter').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#cluster-toggles input').forEach(cb => { cb.checked = true; });
+            renderElementTags();
+            updateTcSlider();
+            updateMassSlider();
+            updateValenceSlider();
+            applyFilters();
+            updateURL();
+        });
+
+        // Initialize slider displays
+        updateTcSlider();
+        updateMassSlider();
+        updateValenceSlider();
+    }
+
+    // ─── Panel Toggles ────────────────────────────────────────────
     document.querySelectorAll('.panel-header').forEach(header => {
         header.addEventListener('click', () => {
             const panelName = header.dataset.panel;
+            if (!panelName) return;
             const body = document.getElementById('body-' + panelName);
             const toggle = document.getElementById('toggle-' + panelName);
             const togglesRow = header.nextElementSibling;
@@ -962,21 +2048,18 @@
             if (body.classList.contains('collapsed')) {
                 body.classList.remove('collapsed');
                 toggle.classList.remove('collapsed');
-                // Also show view-toggles row if it exists
-                if (togglesRow && togglesRow.classList.contains('view-toggles')) {
+                if (togglesRow && togglesRow.classList.contains('view-toggles'))
                     togglesRow.style.display = '';
-                }
             } else {
                 body.classList.add('collapsed');
                 toggle.classList.add('collapsed');
-                if (togglesRow && togglesRow.classList.contains('view-toggles')) {
+                if (togglesRow && togglesRow.classList.contains('view-toggles'))
                     togglesRow.style.display = 'none';
-                }
             }
         });
     });
 
-    // ─── Material Count Toggles ──────────────────────────────────────
+    // Material count toggles
     document.getElementById('mat-toggles').addEventListener('click', (e) => {
         const btn = e.target.closest('.view-toggle');
         if (!btn) return;
@@ -986,27 +2069,26 @@
         populateMaterials(materialCount);
     });
 
-    // ─── Header Button Handlers ──────────────────────────────────────
+    // ─── Header Button Handlers ───────────────────────────────────
     const btnColorTc = document.getElementById('btn-color-tc');
     const btnColorCluster = document.getElementById('btn-color-cluster');
     const btnRegions = document.getElementById('btn-regions');
+    const btnFilters = document.getElementById('btn-filters');
     const btnAbout = document.getElementById('btn-about');
-
-    btnColorTc.classList.add('active');
-    btnRegions.classList.add('active');
+    const btnPeriodic = document.getElementById('btn-periodic');
 
     btnColorTc.addEventListener('click', () => {
         colorMode = 'tc';
         btnColorTc.classList.add('active');
         btnColorCluster.classList.remove('active');
-        if (allMaterials.length) buildPointCloud(allMaterials);
+        if (visibleMaterials.length) buildPointCloud(visibleMaterials);
     });
 
     btnColorCluster.addEventListener('click', () => {
         colorMode = 'cluster';
         btnColorCluster.classList.add('active');
         btnColorTc.classList.remove('active');
-        if (allMaterials.length) buildPointCloud(allMaterials);
+        if (visibleMaterials.length) buildPointCloud(visibleMaterials);
     });
 
     btnRegions.addEventListener('click', () => {
@@ -1015,65 +2097,148 @@
         toggleRegionVisibility(showRegions);
     });
 
+    btnFilters.addEventListener('click', () => {
+        const panel = document.getElementById('filter-panel');
+        const isOpen = panel.style.display !== 'none';
+        panel.style.display = isOpen ? 'none' : '';
+        btnFilters.classList.toggle('active', !isOpen);
+    });
+
     btnAbout.addEventListener('click', () => {
         document.getElementById('about-overlay').classList.add('visible');
     });
-
     document.getElementById('about-close').addEventListener('click', () => {
         document.getElementById('about-overlay').classList.remove('visible');
     });
-
     document.getElementById('about-overlay').addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) {
-            e.currentTarget.classList.remove('visible');
+        if (e.target === e.currentTarget) e.currentTarget.classList.remove('visible');
+    });
+
+    btnPeriodic.addEventListener('click', () => {
+        document.getElementById('periodic-overlay').classList.add('visible');
+    });
+    document.getElementById('periodic-close').addEventListener('click', () => {
+        document.getElementById('periodic-overlay').classList.remove('visible');
+    });
+
+    // Detail panel close
+    document.getElementById('detail-close').addEventListener('click', closeDetailPanel);
+
+    // View preset buttons
+    const presetConfigs = {
+        'btn-preset-pca': { x: 'pca1', y: 'tc', z: 'pca2' },
+        'btn-preset-umap': { x: 'umap1', y: 'tc', z: 'umap2' },
+        'btn-preset-tcmass': { x: 'mass', y: 'tc', z: 'radius' },
+        'btn-preset-valence': { x: 'valence', y: 'tc', z: 'radius' },
+    };
+
+    Object.entries(presetConfigs).forEach(([btnId, config]) => {
+        document.getElementById(btnId).addEventListener('click', () => {
+            document.querySelectorAll('[id^="btn-preset-"]').forEach(b => b.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+            animateAxisTransition(config);
+            updateURL();
+        });
+    });
+
+    // Search
+    document.getElementById('search-input').addEventListener('input', doSearch);
+    document.getElementById('search-clear').addEventListener('click', () => {
+        document.getElementById('search-input').value = '';
+        doSearch();
+    });
+
+    // Hypothesis board
+    document.getElementById('hyp-export-csv').addEventListener('click', exportCSV);
+    document.getElementById('hyp-copy-link').addEventListener('click', copyShareLink);
+    document.getElementById('hyp-clear').addEventListener('click', () => {
+        hypothesisBoard = [];
+        updateHypothesisPanel();
+        updateURL();
+    });
+
+    // Tour
+    document.getElementById('tour-next').addEventListener('click', () => {
+        tourStep++;
+        if (tourStep >= tourSteps.length) {
+            closeTour();
+        } else {
+            renderTourStep();
+        }
+    });
+    document.getElementById('tour-skip').addEventListener('click', closeTour);
+
+    // Event delegation for clickable panels
+    document.getElementById('panels').addEventListener('click', (e) => {
+        const regionItem = e.target.closest('.region-item');
+        if (regionItem) {
+            focusRegion(parseInt(regionItem.dataset.region));
+            return;
+        }
+        const matItem = e.target.closest('.material-item');
+        if (matItem) {
+            const idx = parseInt(matItem.dataset.index);
+            if (!isNaN(idx) && idx >= 0) {
+                focusMaterial(idx);
+                openDetailPanel(idx);
+            }
         }
     });
 
-    // ─── Load Data ───────────────────────────────────────────────────
+    // Detail panel neighbor clicks
+    document.getElementById('detail-content').addEventListener('click', (e) => {
+        const matItem = e.target.closest('.material-item');
+        if (matItem) {
+            const idx = parseInt(matItem.dataset.index);
+            if (!isNaN(idx) && idx >= 0) {
+                focusMaterial(idx);
+                openDetailPanel(idx);
+            }
+        }
+    });
+
+    // ─── Load Data ────────────────────────────────────────────────
     fetch('data/analysis_results_fast.json')
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(data => {
             allMaterials = data.materials;
             sparseRegions = data.sparse_regions || [];
+            elementStats = data.element_stats || {};
             metadata = data.metadata || {};
 
-            // Calculate ranges
-            const xVals = allMaterials.map(m => m.x);
-            const yVals = allMaterials.map(m => m.y);
-            const tcVals = allMaterials.map(m => m.tc);
-            xMin = Math.min(...xVals); xMax = Math.max(...xVals);
-            yMin = Math.min(...yVals); yMax = Math.max(...yVals);
-            tcMin = Math.min(...tcVals); tcMax = Math.max(...tcVals);
+            // Compute ranges for all axes
+            computeAllRanges();
 
-            // Sort by Tc
-            sortedByTc = [...allMaterials].sort((a, b) => b.tc - a.tc);
+            // Restore URL state before applying filters
+            restoreFromURL();
+
+            // Apply initial filters
+            applyFilters();
 
             // Hide loading, show UI
             document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('stats-bar').style.display = '';
-            document.getElementById('panels').style.display = '';
-
-            // Stats bar
-            const clusters = new Set(allMaterials.map(m => m.cluster)).size;
-            const avgTc = (allMaterials.reduce((s, m) => s + m.tc, 0) / allMaterials.length).toFixed(1);
-            document.getElementById('stat-materials').textContent = allMaterials.length.toLocaleString();
-            document.getElementById('stat-clusters').textContent = clusters;
-            document.getElementById('stat-avg-tc').textContent = avgTc + 'K';
-            document.getElementById('stat-max-tc').textContent = (metadata.tc_range ? metadata.tc_range.max : tcMax) + 'K';
+            document.getElementById('stats-bar').style.display = 'flex';
+            document.getElementById('panels').style.display = 'flex';
 
             // Build visualization
-            buildPointCloud(allMaterials);
+            buildPointCloud(visibleMaterials);
             buildRegionMarkers(sparseRegions);
 
             // Populate panels
             populateRegions(sparseRegions);
             populateMaterials(materialCount);
-            populateClusters(allMaterials);
+            populateClusters(visibleMaterials);
 
-            console.log('SuperSearch loaded:', allMaterials.length, 'materials,', sparseRegions.length, 'regions');
+            // Setup filter controls
+            setupFilters();
+
+            // Build periodic table
+            buildPeriodicTable();
+
+            // Show tour for first visit
+            showTour();
+
+            console.log('SuperSearch v2 loaded:', allMaterials.length, 'materials,', sparseRegions.length, 'regions,', Object.keys(elementStats).length, 'elements');
         })
         .catch(e => {
             document.getElementById('loading-msg').textContent = 'Error: ' + e.message;
@@ -1081,28 +2246,38 @@
             console.error('Load error:', e);
         });
 
-    // ─── Animation Loop ──────────────────────────────────────────────
+    // ─── Animation Loop ───────────────────────────────────────────
     function animate() {
         requestAnimationFrame(animate);
+        const now = performance.now();
+        updateAxisAnimation(now);
         controls.update();
         renderer.render(scene, camera);
     }
     animate();
 
-    // ─── Resize Handler ──────────────────────────────────────────────
+    // ─── Resize Handler ───────────────────────────────────────────
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // ─── Keyboard Shortcuts ──────────────────────────────────────────
+    // ─── Keyboard Shortcuts ───────────────────────────────────────
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             document.getElementById('about-overlay').classList.remove('visible');
+            document.getElementById('periodic-overlay').classList.remove('visible');
+            closeDetailPanel();
+            closeTour();
         }
         if (e.key === 'r' || e.key === 'R') {
-            controls.autoRotate = !controls.autoRotate;
+            if (document.activeElement.tagName !== 'INPUT')
+                controls.autoRotate = !controls.autoRotate;
+        }
+        if (e.key === 'f' || e.key === 'F') {
+            if (document.activeElement.tagName !== 'INPUT')
+                btnFilters.click();
         }
     });
     </script>
