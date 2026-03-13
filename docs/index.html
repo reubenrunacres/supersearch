@@ -667,6 +667,7 @@
             <button class="header-btn active" id="btn-color-tc">Tc</button>
             <button class="header-btn" id="btn-color-cluster">Clusters</button>
             <button class="header-btn" id="btn-color-stability">Stability</button>
+            <button class="header-btn" id="btn-color-uncertainty">Uncertainty</button>
         </div>
 
         <!-- View presets -->
@@ -1173,6 +1174,24 @@
         return STABILITY_COLORS.unstable;
     }
 
+    // UMAP uncertainty range (set after data loads)
+    let uncertaintyRange = { min: 0, max: 1 };
+
+    function getUncertaintyColor(m) {
+        const u = m.umap_uncertainty || 0;
+        const t = uncertaintyRange.max > uncertaintyRange.min
+            ? (u - uncertaintyRange.min) / (uncertaintyRange.max - uncertaintyRange.min) : 0;
+        const clamped = Math.max(0, Math.min(1, t));
+        // Blue (stable) → Yellow → Red (unstable)
+        if (clamped < 0.5) {
+            const s = clamped * 2;
+            return [0.15 + s * 0.75, 0.30 + s * 0.50, 0.65 - s * 0.45];
+        } else {
+            const s = (clamped - 0.5) * 2;
+            return [0.90, 0.80 - s * 0.55, 0.20 - s * 0.10];
+        }
+    }
+
     // ─── Axis Mapping ─────────────────────────────────────────────
     function getAxisValue(m, axis) {
         const opt = AXIS_OPTIONS[axis];
@@ -1287,7 +1306,7 @@
             if (searchElements.length > 0 && m.elements && searchElements.every(e => m.elements.includes(e))) {
                 c = SEARCH_HIGHLIGHT;
             } else {
-                c = colorMode === 'stability' ? getStabilityColor(m) : colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
+                c = colorMode === 'uncertainty' ? getUncertaintyColor(m) : colorMode === 'stability' ? getStabilityColor(m) : colorMode === 'tc' ? getTcColor(m.tc) : getClusterColor(m.cluster);
             }
             colors[i * 3] = c[0];
             colors[i * 3 + 1] = c[1];
@@ -1792,7 +1811,8 @@
                 <strong>Region ${i + 1}</strong>
                 ${r.score ? `<span class="region-score">Score: ${r.score}/10</span>` : ''}
                 <div class="region-coords">PCA: (${r.x.toFixed(2)}, ${r.y.toFixed(2)}) &middot; density: ${r.density}</div>
-                ${r.avg_neighbor_tc ? `<div class="region-coords">Avg neighbor Tc: ${r.avg_neighbor_tc}K</div>` : ''}
+                ${r.avg_neighbor_tc ? `<div class="region-coords">Avg Tc: ${r.avg_neighbor_tc}K${r.tc_ci_low != null ? ` <span style="color:#888;">&plusmn; ${((r.tc_ci_high - r.tc_ci_low) / 2).toFixed(1)}K</span> <span style="font-size:8px; color:#888;">(95% CI: ${r.tc_ci_low}&ndash;${r.tc_ci_high}K)</span>` : ''}</div>` : ''}
+                ${r.confidence ? `<span style="display:inline-block; font-size:8px; padding:1px 5px; border-radius:2px; margin-top:2px; background:${r.confidence === 'high' ? 'rgba(45,106,79,0.08)' : r.confidence === 'medium' ? 'rgba(184,134,11,0.08)' : 'rgba(0,0,0,0.04)'}; color:${r.confidence === 'high' ? '#2d6a4f' : r.confidence === 'medium' ? '#b8860b' : '#888'}; border:1px solid ${r.confidence === 'high' ? '#2d6a4f22' : r.confidence === 'medium' ? '#b8860b22' : '#00000011'};">Confidence: ${r.confidence}</span>` : ''}
                 ${barsHtml}
                 ${neighborsHtml}
             </div>`;
@@ -1889,6 +1909,7 @@
                 <div class="detail-row"><span class="detail-row-label">Cluster</span><span class="detail-row-value">${m.cluster}</span></div>
                 <div class="detail-row"><span class="detail-row-label">PCA</span><span class="detail-row-value">(${m.x.toFixed(3)}, ${m.y.toFixed(3)})</span></div>
                 <div class="detail-row"><span class="detail-row-label">UMAP</span><span class="detail-row-value">(${(m.umap_x||0).toFixed(3)}, ${(m.umap_y||0).toFixed(3)})</span></div>
+                ${m.umap_uncertainty ? `<div class="detail-row"><span class="detail-row-label">Projection &plusmn;</span><span class="detail-row-value" style="color:${m.umap_uncertainty < 5 ? '#2d6a4f' : m.umap_uncertainty < 12 ? '#b8860b' : '#c53030'};">${m.umap_uncertainty.toFixed(2)} ${m.umap_uncertainty < 5 ? '(stable)' : m.umap_uncertainty < 12 ? '(moderate)' : '(unstable)'}</span></div>` : ''}
             </div>
 
             <div class="detail-section">
@@ -2550,7 +2571,8 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
                 const m = visibleMaterials[idx];
                 ttFormula.textContent = m.formula || 'Unknown';
                 ttTc.textContent = `Tc: ${m.tc}K`;
-                ttDetail.innerHTML = `${(m.elements||[]).join(', ')}<br>Cluster: ${m.cluster} &middot; Mass: ${m.atomic_mass.toFixed(1)}<br>Radius: ${m.atomic_radius.toFixed(0)}pm &middot; Valence: ${m.valence.toFixed(2)}`;
+                const uncText = m.umap_uncertainty ? ` &middot; UMAP &plusmn;${m.umap_uncertainty.toFixed(1)}` : '';
+                ttDetail.innerHTML = `${(m.elements||[]).join(', ')}<br>Cluster: ${m.cluster} &middot; Mass: ${m.atomic_mass.toFixed(1)}<br>Radius: ${m.atomic_radius.toFixed(0)}pm &middot; Valence: ${m.valence.toFixed(2)}${uncText}`;
             }
             tooltip.style.display = 'block';
             tooltip.style.left = (event.clientX + 14) + 'px';
@@ -2804,6 +2826,7 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
     const btnColorTc = document.getElementById('btn-color-tc');
     const btnColorCluster = document.getElementById('btn-color-cluster');
     const btnColorStability = document.getElementById('btn-color-stability');
+    const btnColorUncertainty = document.getElementById('btn-color-uncertainty');
     const btnRegions = document.getElementById('btn-regions');
     const btnFilters = document.getElementById('btn-filters');
     const btnAbout = document.getElementById('btn-about');
@@ -2815,6 +2838,7 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         btnColorTc.classList.toggle('active', mode === 'tc');
         btnColorCluster.classList.toggle('active', mode === 'cluster');
         btnColorStability.classList.toggle('active', mode === 'stability');
+        btnColorUncertainty.classList.toggle('active', mode === 'uncertainty');
         if (visibleMaterials.length) buildPointCloud(visibleMaterials);
     }
 
@@ -2828,6 +2852,7 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         }
         setColorMode('stability');
     });
+    btnColorUncertainty.addEventListener('click', () => setColorMode('uncertainty'));
 
     btnRegions.addEventListener('click', () => {
         showRegions = !showRegions;
@@ -2991,6 +3016,13 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
 
             // Compute ranges for all axes
             computeAllRanges();
+
+            // Compute UMAP uncertainty range
+            const uncertainties = allMaterials.map(m => m.umap_uncertainty || 0).filter(u => u > 0);
+            if (uncertainties.length) {
+                uncertaintyRange.min = Math.min(...uncertainties);
+                uncertaintyRange.max = Math.max(...uncertainties);
+            }
 
             // Restore URL state before applying filters
             restoreFromURL();

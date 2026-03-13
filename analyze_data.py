@@ -90,11 +90,35 @@ pca = PCA(n_components=2)
 coords_pca = pca.fit_transform(features_scaled)
 print(f"Explained variance: PC1={pca.explained_variance_ratio_[0]:.2%}, PC2={pca.explained_variance_ratio_[1]:.2%}")
 
-# UMAP
+# UMAP (primary projection)
 print("Performing UMAP projection...")
 umap_reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42)
 coords_umap = umap_reducer.fit_transform(features_scaled)
 print(f"UMAP projection complete: {coords_umap.shape}")
+
+# UMAP uncertainty (bootstrap with multiple random seeds)
+N_UMAP_RUNS = 10
+print(f"Computing UMAP uncertainty ({N_UMAP_RUNS} bootstrap runs)...")
+umap_runs = [coords_umap]  # Include the primary run
+for seed in range(1, N_UMAP_RUNS):
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=seed * 7 + 13)
+    run_coords = reducer.fit_transform(features_scaled)
+    # Align to primary projection using Procrustes-like alignment (translation + rotation)
+    # Simple approach: align centroids and scale
+    run_centered = run_coords - run_coords.mean(axis=0)
+    primary_centered = coords_umap - coords_umap.mean(axis=0)
+    # Procrustes: find optimal rotation via SVD
+    H = run_centered.T @ primary_centered
+    U, S, Vt = np.linalg.svd(H)
+    R = Vt.T @ U.T
+    aligned = run_centered @ R.T + coords_umap.mean(axis=0)
+    umap_runs.append(aligned)
+    print(f"  UMAP run {seed + 1}/{N_UMAP_RUNS} done")
+
+umap_stack = np.stack(umap_runs, axis=0)  # (N_UMAP_RUNS, n_materials, 2)
+umap_std = np.std(umap_stack, axis=0)  # (n_materials, 2)
+umap_uncertainty = np.sqrt(umap_std[:, 0]**2 + umap_std[:, 1]**2)  # Combined uncertainty
+print(f"UMAP uncertainty range: {umap_uncertainty.min():.4f} — {umap_uncertainty.max():.4f}")
 
 # ---------------------------------------------------------------------------
 # 4. Clustering
@@ -152,6 +176,7 @@ for i in range(len(coords_pca)):
         'elements': row.get('elements', []),
         'umap_x': round(float(coords_umap[i, 0]), 4),
         'umap_y': round(float(coords_umap[i, 1]), 4),
+        'umap_uncertainty': round(float(umap_uncertainty[i]), 4),
     })
 
 print(f"Built {len(output_data)} material records")
@@ -232,10 +257,30 @@ for i in range(grid_size - 1):
                     'tc': round(float(tc_arr[idx]), 1),
                 })
 
+            # --- Bootstrap 95% CI on avg neighbor Tc ---
+            n_bootstrap = 1000
+            bootstrap_means = []
+            rng_bs = np.random.RandomState(42 + i * 100 + j)
+            for _ in range(n_bootstrap):
+                sample = rng_bs.choice(neighbor_tcs, size=len(neighbor_tcs), replace=True)
+                bootstrap_means.append(float(np.mean(sample)))
+            ci_low = round(float(np.percentile(bootstrap_means, 2.5)), 1)
+            ci_high = round(float(np.percentile(bootstrap_means, 97.5)), 1)
+            ci_width = ci_high - ci_low
+
+            # Confidence level based on material count and CI width
+            n_nearby = int(density_map[i, j])
+            if n_nearby >= 5 and ci_width < 30:
+                confidence = 'high'
+            elif n_nearby >= 3 and ci_width < 60:
+                confidence = 'medium'
+            else:
+                confidence = 'low'
+
             sparse_regions.append({
                 'x': round(float(x_center), 4),
                 'y': round(float(y_center), 4),
-                'density': int(density_map[i, j]),
+                'density': n_nearby,
                 'score': round(float(score * 10), 1),  # Scale to 0-10
                 'score_breakdown': {
                     'sparseness': round(float(sparseness * 100), 1),
@@ -244,6 +289,9 @@ for i in range(grid_size - 1):
                     'feasibility': round(float(feasibility * 100), 1),
                 },
                 'avg_neighbor_tc': round(avg_neighbor_tc, 1),
+                'tc_ci_low': ci_low,
+                'tc_ci_high': ci_high,
+                'confidence': confidence,
                 'nearest_materials': nn_materials,
             })
 
@@ -318,7 +366,7 @@ metadata = {
         'max': round(float(tc_values.max()), 1),
         'mean': round(float(tc_values.mean()), 2),
     },
-    'note': 'SuperSearch v2 — enriched with formulas, UMAP, element data, multi-factor scoring',
+    'note': 'SuperSearch v3 — enriched with formulas, UMAP + uncertainty, element data, multi-factor scoring with CIs',
 }
 
 # Full results
@@ -355,6 +403,6 @@ print(f"  Sparse regions: {len(sparse_regions)} scored opportunities")
 print(f"  Elements:       {len(element_stats)} with frequency stats")
 print(f"  Tc range:       {metadata['tc_range']['min']}K → {metadata['tc_range']['max']}K (avg {metadata['tc_range']['mean']}K)")
 print(f"  PCA variance:   {metadata['pca_variance']['pc1']:.1%} + {metadata['pca_variance']['pc2']:.1%}")
-print(f"\n  New fields per material: formula, formula_raw, elements, umap_x, umap_y, density")
-print(f"  New fields per region:  score, score_breakdown, avg_neighbor_tc, nearest_materials")
-print(f"  New top-level:          element_stats (periodic table heatmap data)")
+print(f"\n  Fields per material:  formula, formula_raw, elements, umap_x, umap_y, density, umap_uncertainty")
+print(f"  Fields per region:   score, score_breakdown, avg_neighbor_tc, tc_ci_low, tc_ci_high, confidence")
+print(f"  Top-level:           element_stats (periodic table heatmap data)")
