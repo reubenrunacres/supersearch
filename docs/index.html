@@ -539,6 +539,94 @@
         .axis-label-item { display: flex; align-items: center; gap: 4px; }
         .axis-color { width: 10px; height: 2px; border-radius: 1px; }
 
+        /* ── Custom Axis Selector ────────────────────────────── */
+        #custom-axis-panel {
+            display: none;
+            position: absolute; top: 48px; right: 12px;
+            z-index: 150;
+            background: rgba(245,243,237,0.96); border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px; padding: 12px 14px;
+            backdrop-filter: blur(8px); box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            font-size: 10px;
+        }
+        #custom-axis-panel.visible { display: block; }
+        .axis-select-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 6px;
+        }
+        .axis-select-row:last-child { margin-bottom: 0; }
+        .axis-select-label {
+            width: 36px; color: #888; font-size: 9px; text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .axis-select-row select {
+            font-family: 'Fragment Mono', monospace; font-size: 10px;
+            padding: 3px 6px; border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 3px; background: rgba(255,255,255,0.8);
+            color: #1a1a1a; outline: none; cursor: pointer;
+            min-width: 110px;
+        }
+        .axis-select-row select:focus { border-color: rgba(0,0,0,0.3); }
+        #custom-axis-panel .axis-panel-actions {
+            display: flex; gap: 6px; margin-top: 8px;
+            padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        #custom-axis-panel .axis-panel-actions button {
+            font-family: 'Fragment Mono', monospace; font-size: 9px;
+            padding: 3px 8px; border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 3px; background: rgba(0,0,0,0.04);
+            color: #555; cursor: pointer; transition: all 0.15s;
+        }
+        #custom-axis-panel .axis-panel-actions button:hover {
+            background: rgba(0,0,0,0.1); color: #1a1a1a;
+        }
+
+        /* ── Lasso Selection ─────────────────────────────────── */
+        #lasso-canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 90; display: none;
+            cursor: crosshair;
+        }
+        #lasso-canvas.active { display: block; }
+        #lasso-stats {
+            display: none;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            background: rgba(245,243,237,0.97); border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 6px; padding: 16px 20px;
+            backdrop-filter: blur(8px); box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            font-size: 11px; line-height: 1.7; min-width: 260px; max-width: 340px;
+        }
+        #lasso-stats.visible { display: block; }
+        #lasso-stats h3 {
+            font-size: 12px; font-weight: 400; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 8px; color: #1a1a1a;
+        }
+        .lasso-stat-row {
+            display: flex; justify-content: space-between;
+            padding: 2px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .lasso-stat-row:last-of-type { border-bottom: none; }
+        .lasso-stat-label { color: #888; }
+        .lasso-stat-value { color: #1a1a1a; font-weight: 400; }
+        .lasso-elements { margin-top: 6px; color: #666; font-size: 10px; line-height: 1.5; }
+        #lasso-stats .lasso-actions {
+            display: flex; gap: 6px; margin-top: 10px;
+            padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.08);
+        }
+        #lasso-stats .lasso-actions button {
+            font-family: 'Fragment Mono', monospace; font-size: 9px;
+            padding: 4px 10px; border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 3px; background: rgba(0,0,0,0.04);
+            color: #555; cursor: pointer; transition: all 0.15s;
+            flex: 1;
+        }
+        #lasso-stats .lasso-actions button:hover {
+            background: rgba(0,0,0,0.1); color: #1a1a1a;
+        }
+
         /* ── Loading ──────────────────────────────────────────── */
         .loading {
             position: absolute; top: 50%; left: 50%;
@@ -587,12 +675,14 @@
             <button class="header-btn" id="btn-preset-umap">UMAP</button>
             <button class="header-btn" id="btn-preset-tcmass">Tc/Mass</button>
             <button class="header-btn" id="btn-preset-valence">Valence</button>
+            <button class="header-btn" id="btn-preset-custom">Custom</button>
         </div>
 
         <!-- Toggles -->
         <div class="header-group">
             <button class="header-btn active" id="btn-regions">Regions</button>
             <button class="header-btn" id="btn-filters">Filters<span id="filter-badge"></span></button>
+            <button class="header-btn" id="btn-lasso">Lasso</button>
             <button class="header-btn" id="btn-periodic">Periodic</button>
             <button class="header-btn" id="btn-methods">Methods</button>
             <button class="header-btn" id="btn-about">About</button>
@@ -666,6 +756,39 @@
 
         <div class="filter-section" style="text-align: center;">
             <button class="detail-btn" id="btn-clear-filters" style="font-size:10px;">Clear All Filters</button>
+        </div>
+    </div>
+
+    <!-- Custom Axis Panel -->
+    <div id="custom-axis-panel">
+        <div class="axis-select-row">
+            <span class="axis-select-label">X</span>
+            <select id="axis-x"></select>
+        </div>
+        <div class="axis-select-row">
+            <span class="axis-select-label">Y</span>
+            <select id="axis-y"></select>
+        </div>
+        <div class="axis-select-row">
+            <span class="axis-select-label">Z</span>
+            <select id="axis-z"></select>
+        </div>
+        <div class="axis-panel-actions">
+            <button id="axis-save-view">Save View</button>
+        </div>
+    </div>
+
+    <!-- Lasso Selection Canvas -->
+    <canvas id="lasso-canvas"></canvas>
+
+    <!-- Lasso Stats Popup -->
+    <div id="lasso-stats">
+        <h3>Selection Summary</h3>
+        <div id="lasso-stats-content"></div>
+        <div class="lasso-actions">
+            <button id="lasso-export-csv">Export CSV</button>
+            <button id="lasso-pin-all">Pin All</button>
+            <button id="lasso-close">Close</button>
         </div>
     </div>
 
@@ -917,6 +1040,14 @@
         'valence': { label: 'Valence', get: m => m.valence },
         'density': { label: 'Density', get: m => m.density },
     };
+
+    // Custom saved views (from localStorage)
+    let savedCustomViews = JSON.parse(localStorage.getItem('ss_custom_views') || '[]');
+
+    // Lasso state
+    let lassoActive = false;
+    let lassoPoints = [];
+    let lassoSelectedMaterials = [];
 
     // Filter state
     let filters = {
@@ -1191,6 +1322,346 @@
         pointCloud.geometry.attributes.position.needsUpdate = true;
     }
 
+    // ─── Custom Axis Selector ────────────────────────────────────
+    function initCustomAxisPanel() {
+        const selects = ['axis-x', 'axis-y', 'axis-z'];
+        selects.forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '';
+            Object.entries(AXIS_OPTIONS).forEach(([key, opt]) => {
+                const o = document.createElement('option');
+                o.value = key;
+                o.textContent = opt.label;
+                sel.appendChild(o);
+            });
+        });
+        syncAxisDropdowns();
+
+        selects.forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                const newConfig = {
+                    x: document.getElementById('axis-x').value,
+                    y: document.getElementById('axis-y').value,
+                    z: document.getElementById('axis-z').value,
+                };
+                document.querySelectorAll('[id^="btn-preset-"]').forEach(b => b.classList.remove('active'));
+                document.getElementById('btn-preset-custom').classList.add('active');
+                animateAxisTransition(newConfig);
+                updateURL();
+            });
+        });
+
+        document.getElementById('axis-save-view').addEventListener('click', () => {
+            const name = prompt('Name for this view:');
+            if (!name) return;
+            const config = {
+                name,
+                x: document.getElementById('axis-x').value,
+                y: document.getElementById('axis-y').value,
+                z: document.getElementById('axis-z').value,
+            };
+            savedCustomViews.push(config);
+            localStorage.setItem('ss_custom_views', JSON.stringify(savedCustomViews));
+            renderSavedViews();
+        });
+    }
+
+    function syncAxisDropdowns() {
+        document.getElementById('axis-x').value = axisConfig.x;
+        document.getElementById('axis-y').value = axisConfig.y;
+        document.getElementById('axis-z').value = axisConfig.z;
+    }
+
+    function renderSavedViews() {
+        let container = document.getElementById('saved-views-list');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'saved-views-list';
+            container.style.cssText = 'margin-top:8px; padding-top:8px; border-top:1px solid rgba(0,0,0,0.06);';
+            document.getElementById('custom-axis-panel').appendChild(container);
+        }
+        if (savedCustomViews.length === 0) { container.innerHTML = ''; return; }
+        container.innerHTML = '<div style="font-size:9px; color:#888; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Saved</div>' +
+            savedCustomViews.map((v, i) =>
+                `<div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+                    <button class="saved-view-btn" data-idx="${i}" style="font-family:'Fragment Mono',monospace; font-size:9px; padding:2px 6px; border:1px solid rgba(0,0,0,0.1); border-radius:3px; background:rgba(0,0,0,0.03); color:#555; cursor:pointer; flex:1; text-align:left;">${v.name}</button>
+                    <button class="saved-view-del" data-idx="${i}" style="font-family:'Fragment Mono',monospace; font-size:9px; padding:2px 4px; border:none; background:none; color:#aaa; cursor:pointer;">&times;</button>
+                </div>`
+            ).join('');
+        container.querySelectorAll('.saved-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const v = savedCustomViews[parseInt(btn.dataset.idx)];
+                animateAxisTransition({ x: v.x, y: v.y, z: v.z });
+                syncAxisDropdowns();
+                document.querySelectorAll('[id^="btn-preset-"]').forEach(b => b.classList.remove('active'));
+                document.getElementById('btn-preset-custom').classList.add('active');
+                updateURL();
+            });
+        });
+        container.querySelectorAll('.saved-view-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+                savedCustomViews.splice(parseInt(btn.dataset.idx), 1);
+                localStorage.setItem('ss_custom_views', JSON.stringify(savedCustomViews));
+                renderSavedViews();
+            });
+        });
+    }
+
+    // ─── Lasso Selection ─────────────────────────────────────────
+    function initLasso() {
+        const canvas = document.getElementById('lasso-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeLassoCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeLassoCanvas();
+        window.addEventListener('resize', resizeLassoCanvas);
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!lassoActive) return;
+            lassoPoints = [{ x: e.clientX, y: e.clientY }];
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!lassoActive || lassoPoints.length === 0) return;
+            lassoPoints.push({ x: e.clientX, y: e.clientY });
+            drawLasso(ctx);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (!lassoActive || lassoPoints.length < 10) {
+                lassoPoints = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            // Close the loop
+            lassoPoints.push(lassoPoints[0]);
+            drawLasso(ctx);
+            selectMaterialsInLasso();
+            deactivateLasso();
+        });
+    }
+
+    function drawLasso(ctx) {
+        const canvas = document.getElementById('lasso-canvas');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (lassoPoints.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(lassoPoints[0].x, lassoPoints[0].y);
+        for (let i = 1; i < lassoPoints.length; i++) {
+            ctx.lineTo(lassoPoints[i].x, lassoPoints[i].y);
+        }
+        ctx.strokeStyle = 'rgba(45,106,79,0.7)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(45,106,79,0.08)';
+        ctx.fill();
+    }
+
+    function projectToScreen(material) {
+        const p = toSceneCoords(material);
+        const vec = new THREE.Vector3(p.x, p.y, p.z);
+        vec.project(camera);
+        return {
+            x: (vec.x * 0.5 + 0.5) * window.innerWidth,
+            y: (-vec.y * 0.5 + 0.5) * window.innerHeight,
+        };
+    }
+
+    function pointInPolygon(px, py, polygon) {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const xi = polygon[i].x, yi = polygon[i].y;
+            const xj = polygon[j].x, yj = polygon[j].y;
+            if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    function selectMaterialsInLasso() {
+        lassoSelectedMaterials = [];
+        visibleMaterials.forEach(m => {
+            const sp = projectToScreen(m);
+            if (pointInPolygon(sp.x, sp.y, lassoPoints)) {
+                lassoSelectedMaterials.push(m);
+            }
+        });
+        showLassoStats();
+    }
+
+    function showLassoStats() {
+        const mats = lassoSelectedMaterials;
+        const panel = document.getElementById('lasso-stats');
+        const content = document.getElementById('lasso-stats-content');
+        if (mats.length === 0) {
+            content.innerHTML = '<div style="color:#888;">No materials in selection.</div>';
+            panel.classList.add('visible');
+            return;
+        }
+
+        const tcs = mats.map(m => m.tc);
+        const avgTc = (tcs.reduce((a, b) => a + b, 0) / tcs.length).toFixed(1);
+        const minTc = Math.min(...tcs).toFixed(1);
+        const maxTc = Math.max(...tcs).toFixed(1);
+
+        // Element frequency
+        const elemCount = {};
+        mats.forEach(m => (m.elements || []).forEach(e => { elemCount[e] = (elemCount[e] || 0) + 1; }));
+        const topElements = Object.entries(elemCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(([el, cnt]) => `${el} (${cnt})`)
+            .join(', ');
+
+        // Cluster distribution
+        const clusterCount = {};
+        mats.forEach(m => { clusterCount[m.cluster] = (clusterCount[m.cluster] || 0) + 1; });
+        const clusterDist = Object.entries(clusterCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([c, n]) => `C${c}: ${n}`)
+            .join(', ');
+
+        const avgMass = (mats.reduce((s, m) => s + m.atomic_mass, 0) / mats.length).toFixed(1);
+
+        content.innerHTML = `
+            <div class="lasso-stat-row"><span class="lasso-stat-label">Materials</span><span class="lasso-stat-value">${mats.length}</span></div>
+            <div class="lasso-stat-row"><span class="lasso-stat-label">Avg Tc</span><span class="lasso-stat-value">${avgTc} K</span></div>
+            <div class="lasso-stat-row"><span class="lasso-stat-label">Min / Max Tc</span><span class="lasso-stat-value">${minTc} / ${maxTc} K</span></div>
+            <div class="lasso-stat-row"><span class="lasso-stat-label">Avg Mass</span><span class="lasso-stat-value">${avgMass}</span></div>
+            <div class="lasso-stat-row"><span class="lasso-stat-label">Clusters</span><span class="lasso-stat-value">${clusterDist}</span></div>
+            <div class="lasso-elements">Top elements: ${topElements}</div>
+        `;
+        panel.classList.add('visible');
+    }
+
+    function activateLasso() {
+        lassoActive = true;
+        document.getElementById('lasso-canvas').classList.add('active');
+        document.getElementById('btn-lasso').classList.add('active');
+        controls.enabled = false;
+    }
+
+    function deactivateLasso() {
+        lassoActive = false;
+        document.getElementById('lasso-canvas').classList.remove('active');
+        document.getElementById('btn-lasso').classList.remove('active');
+        controls.enabled = true;
+        const canvas = document.getElementById('lasso-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function exportLassoCSV() {
+        const mats = lassoSelectedMaterials;
+        if (!mats.length) return;
+        const headers = ['formula', 'tc', 'cluster', 'atomic_mass', 'atomic_radius', 'valence', 'density', 'elements', 'pca_x', 'pca_y', 'umap_x', 'umap_y'];
+        const rows = mats.map(m =>
+            [m.formula_raw || m.formula, m.tc, m.cluster, m.atomic_mass, m.atomic_radius, m.valence, m.density,
+             (m.elements || []).join(';'), m.x, m.y, m.umap_x || '', m.umap_y || ''].join(',')
+        );
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `supersearch_selection_${ts}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function pinLassoToHypothesis() {
+        lassoSelectedMaterials.forEach(m => {
+            if (!hypothesisBoard.find(h => h.formula_raw === m.formula_raw)) {
+                hypothesisBoard.push({
+                    formula: m.formula, formula_raw: m.formula_raw,
+                    tc: m.tc, elements: m.elements,
+                    atomic_mass: m.atomic_mass, valence: m.valence,
+                });
+            }
+        });
+        updateHypothesisPanel();
+        updateURL();
+    }
+
+    // ─── Materials Project API ───────────────────────────────────
+    const MP_API_CACHE = {};
+
+    function getMPApiKey() {
+        return localStorage.getItem('ss_mp_api_key') || '';
+    }
+
+    function setMPApiKey(key) {
+        localStorage.setItem('ss_mp_api_key', key);
+    }
+
+    function promptMPApiKey() {
+        const key = prompt('Enter your Materials Project API key.\nGet one free at https://materialsproject.org/api\n\nLeave blank to skip.');
+        if (key !== null) {
+            setMPApiKey(key.trim());
+        }
+        return key ? key.trim() : '';
+    }
+
+    async function fetchMPData(formula) {
+        const raw = formula.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, c => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(c)]);
+        const cacheKey = raw.toLowerCase();
+        if (MP_API_CACHE[cacheKey]) return MP_API_CACHE[cacheKey];
+
+        let apiKey = getMPApiKey();
+        if (!apiKey) {
+            apiKey = promptMPApiKey();
+            if (!apiKey) return null;
+        }
+
+        try {
+            const resp = await fetch(
+                `https://api.materialsproject.org/materials/summary/?formula=${encodeURIComponent(raw)}&_fields=material_id,formula_pretty,formation_energy_per_atom,band_gap,density,symmetry,energy_above_hull,nsites`,
+                { headers: { 'X-API-KEY': apiKey } }
+            );
+            if (resp.status === 403) {
+                localStorage.removeItem('ss_mp_api_key');
+                return { error: 'Invalid API key. Please try again.' };
+            }
+            if (!resp.ok) return { error: `API error: ${resp.status}` };
+            const data = await resp.json();
+            const results = data.data || [];
+            const result = results.length > 0 ? results[0] : null;
+            MP_API_CACHE[cacheKey] = result;
+            return result;
+        } catch (e) {
+            return { error: 'Network error: ' + e.message };
+        }
+    }
+
+    function renderMPEnrichment(container, mpData) {
+        if (!mpData || mpData.error) {
+            container.innerHTML = mpData && mpData.error
+                ? `<div style="color:#c53030; font-size:10px;">${mpData.error}</div>`
+                : '<div style="color:#888; font-size:10px;">No match in Materials Project.</div>';
+            return;
+        }
+        const sym = mpData.symmetry || {};
+        container.innerHTML = `
+            <div style="font-size:9px; color:#2d6a4f; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+                Materials Project Data
+            </div>
+            <div class="detail-row"><span class="detail-row-label">MP ID</span><span class="detail-row-value"><a href="https://materialsproject.org/materials/${mpData.material_id}" target="_blank" rel="noopener" style="color:#2d6a4f;">${mpData.material_id}</a></span></div>
+            ${mpData.formation_energy_per_atom != null ? `<div class="detail-row"><span class="detail-row-label">Formation E</span><span class="detail-row-value">${mpData.formation_energy_per_atom.toFixed(3)} eV/atom</span></div>` : ''}
+            ${mpData.band_gap != null ? `<div class="detail-row"><span class="detail-row-label">Band Gap</span><span class="detail-row-value">${mpData.band_gap.toFixed(3)} eV</span></div>` : ''}
+            ${mpData.density != null ? `<div class="detail-row"><span class="detail-row-label">Density (MP)</span><span class="detail-row-value">${mpData.density.toFixed(2)} g/cm&sup3;</span></div>` : ''}
+            ${sym.symbol ? `<div class="detail-row"><span class="detail-row-label">Space Group</span><span class="detail-row-value">${sym.symbol}</span></div>` : ''}
+            ${mpData.energy_above_hull != null ? `<div class="detail-row"><span class="detail-row-label">E above hull</span><span class="detail-row-value">${mpData.energy_above_hull.toFixed(4)} eV/atom ${mpData.energy_above_hull === 0 ? '<span style="color:#2d6a4f;">Stable</span>' : mpData.energy_above_hull < 0.1 ? '<span style="color:#b8860b;">Metastable</span>' : '<span style="color:#c53030;">Unstable</span>'}</span></div>` : ''}
+            ${mpData.nsites ? `<div class="detail-row"><span class="detail-row-label">Synthesized</span><span class="detail-row-value" style="color:#2d6a4f;">Known structure (${mpData.nsites} sites)</span></div>` : ''}
+            <div style="font-size:8px; color:#aaa; margin-top:4px;">Powered by Materials Project</div>
+        `;
+    }
+
     // ─── Region Markers ───────────────────────────────────────────
     function buildRegionMarkers(regions) {
         regionMeshes.forEach(m => scene.remove(m));
@@ -1388,6 +1859,14 @@
                 </div>
             </div>
 
+            <div class="detail-section" id="mp-enrichment-section" style="display:none;">
+                <div class="detail-section-title">Materials Project Enrichment</div>
+                <div id="mp-enrichment-content"><div style="color:#888; font-size:10px;">Loading...</div></div>
+            </div>
+            <div style="text-align:center; margin:4px 0;">
+                <button class="detail-btn" id="btn-fetch-mp" style="font-size:9px; padding:3px 10px;">Fetch Materials Project Data</button>
+            </div>
+
             <div class="detail-actions">
                 <button class="detail-btn primary" id="btn-find-similar">Find Similar</button>
                 <button class="detail-btn" id="btn-export-cif">Export CIF</button>
@@ -1402,6 +1881,17 @@
 
         document.getElementById('detail-content').innerHTML = html;
         document.getElementById('detail-panel').classList.add('open');
+
+        // Materials Project fetch
+        document.getElementById('btn-fetch-mp').addEventListener('click', async () => {
+            const section = document.getElementById('mp-enrichment-section');
+            const content = document.getElementById('mp-enrichment-content');
+            section.style.display = 'block';
+            content.innerHTML = '<div style="color:#888; font-size:10px;">Fetching from Materials Project...</div>';
+            document.getElementById('btn-fetch-mp').style.display = 'none';
+            const mpData = await fetchMPData(m.formula_raw || m.formula);
+            renderMPEnrichment(content, mpData);
+        });
 
         // Find Similar
         document.getElementById('btn-find-similar').addEventListener('click', () => {
@@ -2337,9 +2827,43 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         document.getElementById(btnId).addEventListener('click', () => {
             document.querySelectorAll('[id^="btn-preset-"]').forEach(b => b.classList.remove('active'));
             document.getElementById(btnId).classList.add('active');
+            document.getElementById('custom-axis-panel').classList.remove('visible');
             animateAxisTransition(config);
+            syncAxisDropdowns();
             updateURL();
         });
+    });
+
+    // Custom axis button
+    document.getElementById('btn-preset-custom').addEventListener('click', () => {
+        document.querySelectorAll('[id^="btn-preset-"]').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-preset-custom').classList.add('active');
+        document.getElementById('custom-axis-panel').classList.toggle('visible');
+        syncAxisDropdowns();
+    });
+
+    // Initialize custom axis panel dropdowns + saved views
+    initCustomAxisPanel();
+    renderSavedViews();
+
+    // Lasso tool
+    initLasso();
+    document.getElementById('btn-lasso').addEventListener('click', () => {
+        if (lassoActive) {
+            deactivateLasso();
+        } else {
+            activateLasso();
+        }
+    });
+    document.getElementById('lasso-export-csv').addEventListener('click', exportLassoCSV);
+    document.getElementById('lasso-pin-all').addEventListener('click', () => {
+        pinLassoToHypothesis();
+        document.getElementById('lasso-stats').classList.remove('visible');
+    });
+    document.getElementById('lasso-close').addEventListener('click', () => {
+        document.getElementById('lasso-stats').classList.remove('visible');
+        lassoPoints = [];
+        lassoSelectedMaterials = [];
     });
 
     // Search
@@ -2471,6 +2995,9 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
             document.getElementById('about-overlay').classList.remove('visible');
             document.getElementById('methods-overlay').classList.remove('visible');
             document.getElementById('periodic-overlay').classList.remove('visible');
+            document.getElementById('custom-axis-panel').classList.remove('visible');
+            document.getElementById('lasso-stats').classList.remove('visible');
+            if (lassoActive) deactivateLasso();
             closeDetailPanel();
             closeTour();
         }
@@ -2481,6 +3008,10 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         if (e.key === 'f' || e.key === 'F') {
             if (document.activeElement.tagName !== 'INPUT')
                 btnFilters.click();
+        }
+        if (e.key === 'l' || e.key === 'L') {
+            if (document.activeElement.tagName !== 'INPUT')
+                document.getElementById('btn-lasso').click();
         }
     });
     </script>
