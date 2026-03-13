@@ -716,7 +716,8 @@
         </div>
         <div id="hypothesis-list"></div>
         <div id="hypothesis-actions">
-            <button class="detail-btn" id="hyp-export-csv" style="font-size:9px;">Export CSV</button>
+            <button class="detail-btn" id="hyp-export-csv" style="font-size:9px;">Summary CSV</button>
+            <button class="detail-btn" id="hyp-export-full" style="font-size:9px;">Full CSV</button>
             <button class="detail-btn" id="hyp-copy-link" style="font-size:9px;">Copy Link</button>
             <button class="detail-btn" id="hyp-clear" style="font-size:9px;">Clear</button>
         </div>
@@ -1564,7 +1565,14 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
                 tc: m.tc,
                 elements: m.elements,
                 atomic_mass: m.atomic_mass,
+                atomic_radius: m.atomic_radius,
                 valence: m.valence,
+                density: m.density,
+                cluster: m.cluster,
+                pca_x: m.x,
+                pca_y: m.y,
+                umap_x: m.umap_x,
+                umap_y: m.umap_y,
             });
         }
         updateHypothesisPanel();
@@ -1601,16 +1609,26 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         });
     }
 
-    function exportCSV() {
+    function exportCSV(full) {
         if (!hypothesisBoard.length) return;
-        const header = 'formula,tc,atomic_mass,valence,elements\n';
-        const rows = hypothesisBoard.map(h =>
-            `"${h.formula_raw}",${h.tc},${h.atomic_mass},${h.valence},"${(h.elements||[]).join(';')}"`
-        ).join('\n');
+        const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        let header, rows;
+        if (full) {
+            header = 'formula,tc,atomic_mass,atomic_radius,valence,density,cluster,pca_x,pca_y,umap_x,umap_y,elements\n';
+            rows = hypothesisBoard.map(h =>
+                `"${h.formula_raw}",${h.tc},${h.atomic_mass || ''},${h.atomic_radius || ''},${h.valence || ''},${h.density || ''},${h.cluster ?? ''},${h.pca_x || ''},${h.pca_y || ''},${h.umap_x || ''},${h.umap_y || ''},"${(h.elements||[]).join(';')}"`
+            ).join('\n');
+        } else {
+            header = 'formula,tc,atomic_mass,valence,elements\n';
+            rows = hypothesisBoard.map(h =>
+                `"${h.formula_raw}",${h.tc},${h.atomic_mass || ''},${h.valence || ''},"${(h.elements||[]).join(';')}"`
+            ).join('\n');
+        }
         const blob = new Blob([header + rows], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'supersearch_hypotheses.csv';
+        a.href = url;
+        a.download = `supersearch_hypothesis_board_${ts}.csv`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
@@ -2234,7 +2252,8 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
     });
 
     // Hypothesis board
-    document.getElementById('hyp-export-csv').addEventListener('click', exportCSV);
+    document.getElementById('hyp-export-csv').addEventListener('click', () => exportCSV(false));
+    document.getElementById('hyp-export-full').addEventListener('click', () => exportCSV(true));
     document.getElementById('hyp-copy-link').addEventListener('click', copyShareLink);
     document.getElementById('hyp-clear').addEventListener('click', () => {
         hypothesisBoard = [];
