@@ -2263,9 +2263,9 @@ Provide a 2-3 sentence scientific rationale about this material's significance a
         const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
         let header, rows;
         if (full) {
-            header = 'formula,tc,atomic_mass,atomic_radius,valence,density,cluster,pca_x,pca_y,umap_x,umap_y,elements\n';
+            header = 'formula,tc,atomic_mass,atomic_radius,valence,density,cluster,pca_x,pca_y,umap_x,umap_y,umap_uncertainty,elements\n';
             rows = hypothesisBoard.map(h =>
-                `"${h.formula_raw}",${h.tc},${h.atomic_mass || ''},${h.atomic_radius || ''},${h.valence || ''},${h.density || ''},${h.cluster ?? ''},${h.pca_x || ''},${h.pca_y || ''},${h.umap_x || ''},${h.umap_y || ''},"${(h.elements||[]).join(';')}"`
+                `"${h.formula_raw}",${h.tc},${h.atomic_mass || ''},${h.atomic_radius || ''},${h.valence || ''},${h.density || ''},${h.cluster ?? ''},${h.pca_x || ''},${h.pca_y || ''},${h.umap_x || ''},${h.umap_y || ''},${h.umap_uncertainty || ''},"${(h.elements||[]).join(';')}"`
             ).join('\n');
         } else {
             header = 'formula,tc,atomic_mass,valence,elements\n';
